@@ -1,0 +1,2476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road — RH & Pessoas</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #0d0d1a;
+  --card: #1a1a2e;
+  --border: #2a2a4a;
+  --primary: #e91e8c;
+  --secondary: #9c27b0;
+  --cyan: #00bcd4;
+  --red: #ff5252;
+  --orange: #ffab40;
+  --green: #69f0ae;
+  --text: #ffffff;
+  --text2: #aaaacc;
+  --header-h: 60px;
+  --subbar-h: 48px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── HEADER ── */
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #12122b;
+  border-bottom: 1px solid var(--border);
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+}
+
+#logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+#logo img { height: 28px; filter: brightness(0) invert(1); }
+
+#logo-text {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 20px;
+  color: #fff;
+  letter-spacing: -1px;
+}
+
+#header-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+#header-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+#last-update {
+  font-size: 11px;
+  color: var(--text2);
+  font-family: 'Space Mono', monospace;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+/* ── FILTER SELECT ── */
+.filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.filter-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--primary);
+  padding: 0 8px;
+  white-space: nowrap;
+  background: rgba(233,30,140,0.1);
+  height: 32px;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border);
+  text-transform: uppercase;
+}
+
+.filter-select {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 0 8px;
+  height: 32px;
+  outline: none;
+  cursor: pointer;
+  min-width: 110px;
+}
+
+.filter-select option { background: #1a1a2e; }
+
+.filter-reset {
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  padding: 0 6px;
+  height: 32px;
+  font-size: 14px;
+  transition: color .2s;
+}
+.filter-reset:hover { color: var(--red); }
+
+/* ── NAV TABS ── */
+#nav {
+  background: #12122b;
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 14px 20px 12px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid transparent;
+  text-transform: uppercase;
+  transition: color .2s, border-color .2s;
+}
+
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ── SUB FILTER BAR ── */
+#subbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: var(--subbar-h);
+}
+
+#subbar .filter-label { font-size: 9px; }
+
+/* ── MAIN CONTENT ── */
+#main {
+  padding: 24px;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── SECTION HEADER ── */
+.section-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.section-eyebrow span { color: var(--primary); }
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.section-title em {
+  font-style: normal;
+  color: var(--primary);
+}
+
+/* ── KPI CARDS ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+}
+
+.kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--text2);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-family: 'Space Mono', monospace;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── CHART GRID ── */
+.chart-row {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.chart-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.chart-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.chart-row.cols-60-40 { grid-template-columns: 3fr 2fr; }
+.chart-row.cols-40-60 { grid-template-columns: 2fr 3fr; }
+
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.chart-card-header {
+  margin-bottom: 14px;
+}
+
+.chart-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--primary);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  border: 1px solid rgba(233,30,140,0.3);
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chart-sub {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.table-card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.table-wrap { overflow-x: auto; max-height: 360px; overflow-y: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead th {
+  background: #0d0d1a;
+  color: var(--text2);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr { border-bottom: 1px solid rgba(42,42,74,0.5); transition: background .15s; }
+tbody tr:hover { background: rgba(233,30,140,0.05); }
+tbody td { padding: 9px 14px; color: var(--text); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badge-green { background: rgba(105,240,174,0.15); color: var(--green); }
+.badge-orange { background: rgba(255,171,64,0.15); color: var(--orange); }
+.badge-red { background: rgba(255,82,82,0.15); color: var(--red); }
+.badge-blue { background: rgba(0,188,212,0.15); color: var(--cyan); }
+.badge-purple { background: rgba(156,39,176,0.15); color: var(--secondary); }
+
+/* ── SPINNER / ERROR ── */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  gap: 16px;
+}
+
+.spinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loading-overlay p { color: var(--text2); font-size: 14px; }
+
+#error-msg {
+  display: none;
+  background: rgba(255,82,82,0.1);
+  border: 1px solid var(--red);
+  border-radius: 8px;
+  padding: 12px 20px;
+  color: var(--red);
+  margin: 20px 24px;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+/* ── COMPARISON TAB ── */
+.cmp-controls{display:flex;align-items:center;gap:12px;padding:16px 0 24px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:24px}
+.cmp-period-badge{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:4px;white-space:nowrap;font-family:'Space Mono',monospace}
+.badge-a{background:rgba(233,30,140,0.15);color:var(--primary);border:1px solid rgba(233,30,140,0.3)}
+.badge-b{background:rgba(0,188,212,0.15);color:var(--cyan);border:1px solid rgba(0,188,212,0.3)}
+.cmp-vs{font-family:'Space Mono',monospace;font-weight:700;color:var(--text2);font-size:18px;padding:0 6px}
+.cmp-kpi-grid{display:grid;gap:12px;margin-bottom:24px}
+.cmp-kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.cmp-kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),var(--cyan))}
+.cmp-kpi-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text2);text-transform:uppercase;margin-bottom:10px}
+.cmp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cmp-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;flex:1;min-width:0}
+.cmp-val-a{color:var(--primary)}
+.cmp-val-b{color:var(--cyan)}
+.cmp-delta{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.cmp-delta-up{background:rgba(105,240,174,0.15);color:var(--green)}
+.cmp-delta-down{background:rgba(255,82,82,0.15);color:var(--red)}
+.cmp-delta-flat{background:rgba(170,170,204,0.12);color:var(--text2)}
+.cmp-chart-row{display:grid;gap:16px;margin-bottom:16px}
+.cmp-chart-row.cols-2{grid-template-columns:1fr 1fr}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Carregando dados…</p>
+</div>
+
+<div id="error-msg"></div>
+
+<!-- HEADER -->
+<header id="header">
+  <div id="logo">
+    <span id="logo-text">Road</span>
+  </div>
+  <span id="header-title">RH &amp; Pessoas</span>
+
+  <div id="header-filters">
+    <div class="filter-wrap">
+      <span class="filter-label">ANO</span>
+      <select class="filter-select" id="f-ano"><option value="">Todos</option></select>
+      <button class="filter-reset" data-target="f-ano" title="Limpar">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">MÊS</span>
+      <select class="filter-select" id="f-mes"><option value="">Todos</option></select>
+      <button class="filter-reset" data-target="f-mes" title="Limpar">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">CÉLULA</span>
+      <select class="filter-select" id="f-celula"><option value="">Todos</option></select>
+      <button class="filter-reset" data-target="f-celula" title="Limpar">×</button>
+    </div>
+    <span id="last-update">—</span>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav id="nav">
+  <button class="tab-btn active" data-tab="tab1">Análise por Período</button>
+  <button class="tab-btn" data-tab="tab2">Diversidade &amp; Inclusão</button>
+  <button class="tab-btn" data-tab="tab3">Correlações Estratégicas</button>
+  <button class="tab-btn" data-tab="tab4">Pessoas &amp; Operações</button>
+  <button class="tab-btn" data-tab="tabComp">Comparativo</button>
+</nav>
+
+<!-- SUB FILTER BAR -->
+<div id="subbar"></div>
+
+<!-- MAIN -->
+<main id="main">
+
+  <!-- ABA 1 -->
+  <div class="tab-panel active" id="tab1">
+    <p class="section-eyebrow">// <span>PERÍODO</span></p>
+    <h2 class="section-title">Análise de Vagas <em id="tab1-period-label">—</em></h2>
+
+    <div class="kpi-row" id="kpi1"></div>
+
+    <div class="chart-row cols-60-40">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Vagas por Departamento</div>
+          <div class="chart-title">Volume e distribuição das vagas por área</div>
+        </div>
+        <div class="chart-container" style="height:240px">
+          <canvas id="ch-dept"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Canais de Atração</div>
+          <div class="chart-title">Origem dos candidatos às vagas</div>
+        </div>
+        <div class="chart-container" style="height:240px">
+          <canvas id="ch-canal"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row cols-40-60">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Vagas Fechadas por Mês</div>
+          <div class="chart-title">Vagas contabilizadas pela data de fechamento</div>
+        </div>
+        <div class="chart-container" style="height:220px">
+          <canvas id="ch-fechadas"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Tempo de Fechamento por Vaga</div>
+          <div class="chart-title">Dias até a contratação (vagas com data de fechamento)</div>
+        </div>
+        <div class="chart-container" style="height:220px">
+          <canvas id="ch-sla"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="chart-tag">Detalhamento</div>
+        <span style="color:var(--text2);font-size:12px">Todas as vagas do período filtrado</span>
+      </div>
+      <div class="table-wrap">
+        <table id="tbl1">
+          <thead>
+            <tr>
+              <th>Cargo</th><th>Cliente</th><th>Departamento</th>
+              <th>Mês Fechamento</th><th>Motivo</th><th>Formato</th>
+              <th>Status</th><th>Dias</th>
+            </tr>
+          </thead>
+          <tbody id="tbl1-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 2 placeholder -->
+  <!-- ABA 2 completa -->
+  <div class="tab-panel" id="tab2">
+    <p class="section-eyebrow">// <span>CONTRATAÇÕES</span></p>
+    <h2 class="section-title">Diversidade e <em>Inclusão</em> nas Contratações</h2>
+
+    <div class="chart-row cols-3">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Identidade de Gênero</div>
+          <div class="chart-sub" id="d2-genero-insight"></div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-d2-genero"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Raça e Cor</div>
+          <div class="chart-sub" id="d2-raca-insight"></div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-d2-raca"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Orientação Afetivo-Sexual</div>
+          <div class="chart-sub" id="d2-orient-insight"></div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-d2-orient"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Gênero x Raça</div>
+          <div class="chart-title">Interseccionalidade nas contratações</div>
+        </div>
+        <div class="chart-container" style="height:260px"><canvas id="ch-d2-genraca"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Diversidade por Departamento</div>
+          <div class="chart-title">Representação dentro dos departamentos</div>
+        </div>
+        <div class="chart-container" style="height:260px"><canvas id="ch-d2-divdept"></canvas></div>
+      </div>
+    </div>
+
+    <div class="kpi-row" id="kpi2" style="margin-top:16px"></div>
+  </div>
+
+  <!-- ABA 3 placeholder -->
+  <div class="tab-panel" id="tab3">
+    <p class="section-eyebrow">// <span>VISÃO ESTRATÉGICA</span></p>
+    <h2 class="section-title">Correlações das <em>Contratações e Desligamentos</em></h2>
+
+    <p class="section-eyebrow" style="margin-bottom:12px">// <span>CONTRATAÇÕES</span></p>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Motivo x Formato</div>
+          <div class="chart-title">Como a necessidade define o tipo de contrato</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t3-motivofmt"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Departamento x Salário Médio</div>
+          <div class="chart-title">Remuneração média por área (vagas aprovadas)</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t3-deptsalario"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Célula x Volume de Vagas</div>
+          <div class="chart-title">Quais células mais demandam contratações</div>
+        </div>
+        <div class="chart-container" style="height:200px"><canvas id="ch-t3-celula"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Canal x Tempo Médio de Fechamento</div>
+          <div class="chart-title">Eficiência de cada canal de recrutamento (dias)</div>
+        </div>
+        <div class="chart-container" style="height:200px"><canvas id="ch-t3-canalsla"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Formato x Faixa Salarial</div>
+          <div class="chart-title">Média e amplitude por tipo de contrato</div>
+        </div>
+        <div class="chart-container" style="height:200px"><canvas id="ch-t3-fmtsalario"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Cargo x Tempo de Fechamento</div>
+          <div class="chart-title">Eficiência de contratação para cada cargo (dias) — top 15</div>
+        </div>
+        <div class="chart-container" style="height:200px"><canvas id="ch-t3-cargosla"></canvas></div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);margin:24px 0 16px"></div>
+    <p class="section-eyebrow" style="margin-bottom:12px">// <span>OFFBOARDING &amp; TURNOVER</span></p>
+
+    <div class="kpi-row" id="kpi3"></div>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Desligamentos por Mês</div>
+          <div class="chart-title">Voluntários vs Involuntários ao longo do tempo</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t3-desligmes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">% Turnover Mensal</div>
+          <div class="chart-title">Taxa de saída sobre headcount total</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t3-turnover"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Desligamentos por Cargo</div>
+          <div class="chart-title">Top 10 cargos com mais saídas</div>
+        </div>
+        <div class="chart-container" style="height:240px"><canvas id="ch-t3-cargosaida"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 4 -->
+  <div class="tab-panel" id="tab4">
+    <p class="section-eyebrow">// <span>OPERAÇÕES</span></p>
+    <h2 class="section-title">Pessoas &amp; <em>Operações</em></h2>
+
+    <p class="section-eyebrow" style="margin-bottom:12px">// <span>GESTÃO DE FÉRIAS</span></p>
+
+    <div class="kpi-row" id="kpi4-ferias"></div>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card" style="padding:0;overflow:hidden">
+        <div class="chart-card-header" style="padding:14px 18px 10px">
+          <div class="chart-tag">Saldo de Férias por Colaborador</div>
+          <div class="chart-title">Ordenado crescente — negativos primeiro</div>
+        </div>
+        <div style="overflow-y:auto;max-height:340px" id="saldo-colab-wrap"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Saldo Médio por Célula</div>
+          <div class="chart-title">Média de dias acumulados por célula</div>
+        </div>
+        <div class="chart-container" style="height:320px"><canvas id="ch-t4-celula"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Saldo por Liderança</div>
+          <div class="chart-title">Média de saldo do time por líder</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t4-lideranca"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="chart-tag" style="background:rgba(255,82,82,0.15);color:var(--red);border-color:rgba(255,82,82,0.3)">Vencimentos Críticos</div>
+        <span style="color:var(--text2);font-size:12px">Colaboradores com limite para tirar férias em até 60 dias</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Colaborador</th><th>Célula</th><th>Liderança</th>
+            <th>Saldo Atual</th><th>Limite para Tirar</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbl4-ferias"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);margin:28px 0 16px"></div>
+    <p class="section-eyebrow" style="margin-bottom:12px">// <span>FINANCEIRO DE RESCISÕES</span></p>
+
+    <div class="kpi-row" id="kpi4-rescisao"></div>
+
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Custo Rescisório por Mês</div>
+          <div class="chart-title">Soma dos valores totais por mês de desligamento</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t4-customes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Breakdown do Custo Médio</div>
+          <div class="chart-title">Composição por motivo de desligamento</div>
+        </div>
+        <div class="chart-container" style="height:220px"><canvas id="ch-t4-breakdown"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-tag">Custo por Cargo</div>
+          <div class="chart-title">Média de custo rescisório — top 10 cargos</div>
+        </div>
+        <div class="chart-container" style="height:240px"><canvas id="ch-t4-custocargo"></canvas></div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="chart-tag" style="background:rgba(255,82,82,0.15);color:var(--red);border-color:rgba(255,82,82,0.3)">Status de Documentação</div>
+        <span style="color:var(--text2);font-size:12px">Apenas pendências — documentação não confirmada</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Colaborador</th><th>Cargo</th><th>Data Desligamento</th>
+            <th>Doc. OK</th><th>Aprovação</th><th>Data Distrato</th><th>Valor Total</th>
+          </tr></thead>
+          <tbody id="tbl4-docs"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+<!-- ABA COMPARATIVO -->
+<div class="tab-panel" id="tabComp">
+  <p class="section-eyebrow">// <span>HISTÓRICO</span> — Comparação entre Períodos</p>
+  <h2 class="section-title">Análise <em>Comparativa</em></h2>
+
+  <div class="cmp-controls">
+    <span class="cmp-period-badge badge-a" id="cmp-lbl-a">A — Período A</span>
+    <div class="filter-wrap">
+      <span class="filter-label">ANO</span>
+      <select class="filter-select" id="cmp-a-ano"><option value="">Todos</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-a-ano').value='';renderTabComp()">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">MÊS</span>
+      <select class="filter-select" id="cmp-a-mes"><option value="">Ano todo</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-a-mes').value='';renderTabComp()">×</button>
+    </div>
+    <span class="cmp-vs">VS</span>
+    <span class="cmp-period-badge badge-b" id="cmp-lbl-b">B — Período B</span>
+    <div class="filter-wrap">
+      <span class="filter-label">ANO</span>
+      <select class="filter-select" id="cmp-b-ano"><option value="">Todos</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-b-ano').value='';renderTabComp()">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">MÊS</span>
+      <select class="filter-select" id="cmp-b-mes"><option value="">Ano todo</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-b-mes').value='';renderTabComp()">×</button>
+    </div>
+  </div>
+  <div class="cmp-kpi-grid" id="cmp-kpis" style="grid-template-columns:repeat(5,1fr)"></div>
+
+  <div class="cmp-chart-row cols-2">
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Vagas por Departamento</div><div class="chart-title">Volume de recrutamento por área</div></div>
+      <div class="chart-container" style="height:280px"><canvas id="cmp-ch-dept"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Canal de Atração</div><div class="chart-title">Origem dos candidatos</div></div>
+      <div class="chart-container" style="height:280px"><canvas id="cmp-ch-canal"></canvas></div>
+    </div>
+  </div>
+  <div class="cmp-chart-row cols-2">
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Desligamentos por Tipo</div><div class="chart-title">Voluntário vs Involuntário</div></div>
+      <div class="chart-container" style="height:220px"><canvas id="cmp-ch-deslig"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Diversidade nas Contratações</div><div class="chart-title">% Mulheres · Negros/Pardos · LGBTQIA+</div></div>
+      <div class="chart-container" style="height:220px"><canvas id="cmp-ch-div"></canvas></div>
+    </div>
+  </div>
+</div>
+</main>
+
+<script>
+const URLS = {
+  fVagas: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ-zu-9wiO_KA0aid87MiFJykN3z-x1ZbFJLxPKuz9V33jrnMrxtQ6jJZapHqjknNRP-JZ9FavDPTg7/pub?gid=2085325933&single=true&output=csv',
+  fDescanso: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTk1mmQ--kIc_XX7_UAXfGInSEmZTyEx0HlZBD_XffmEzT3PGPFQhDwcRq2f2lkC6az1cm-Wn3wJk8o/pub?gid=712794867&single=true&output=csv',
+  fOffboarding: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSdy98U-i_jtJSrYyH7hOB41MOlRlL-QETFhs_IJM12YAMhyXYm2ltWI2GESPZ5UqZI9mFU5yX7aSc_/pub?gid=943726002&single=true&output=csv',
+  fTurnover: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWcnrpbQLMWePCXNlEMcoxIQx9G5KZ3H6OBCrOdjuT9eE8YyLUWGDw5ZjFHCmX8n1oizyF6FcCTybi/pub?gid=1281847632&single=true&output=csv',
+  fTurnoverAnual: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWcnrpbQLMWePCXNlEMcoxIQx9G5KZ3H6OBCrOdjuT9eE8YyLUWGDw5ZjFHCmX8n1oizyF6FcCTybi/pub?gid=2066843810&single=true&output=csv'
+};
+
+const DB = {};
+let charts1 = {};
+let activeTab = 'tab1';
+
+const COLORS = ['#e91e8c','#9c27b0','#00bcd4','#ffab40','#69f0ae','#ff5252','#673ab7','#03a9f4','#ff6090','#4caf50'];
+
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function toFloat(v) {
+  if (v == null || v === '') return 0;
+  return parseFloat(String(v).replace(',','.')) || 0;
+}
+
+function parseBool(v) {
+  if (typeof v === 'boolean') return v;
+  return String(v).toUpperCase() === 'TRUE';
+}
+
+/* ── DATE NORMALIZER ──────────────────────────────────────────────
+   Converte QUALQUER formato de data para ISO YYYY-MM-DD (string).
+   Executado UMA vez no loadAll → zero overhead em filtros e charts.
+   Formatos: YYYY-MM-DD, DD/MM/YYYY, MM/YYYY, YYYY-MM,
+             "Fevereiro 2026", "fev/2026", "março de 2025", serial Excel.
+─────────────────────────────────────────────────────────────────── */
+const DATE_FIELDS_NORM = [
+  'data_abertura','data_fechamento','data_fechamento_vaga','data_desligamento',
+  'data_pagamento_rescisao','data_envio_distrato','mes_referencia',
+  'limite_para_tirar','data_competencia','data_lancamento','data_pagamento','data'
+];
+
+const MES_MAP_NORM = {
+  'janeiro':1,'fevereiro':2,'marco':3,'abril':4,'maio':5,'junho':6,
+  'julho':7,'agosto':8,'setembro':9,'outubro':10,'novembro':11,'dezembro':12,
+  'jan':1,'fev':2,'mar':3,'abr':4,'mai':5,'jun':6,
+  'jul':7,'ago':8,'set':9,'out':10,'nov':11,'dez':12
+};
+
+function normalizeDate(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}[T ]/.test(s)) return s.slice(0, 10);
+  const mDMY = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mDMY) return `${mDMY[3]}-${mDMY[2].padStart(2,'0')}-${mDMY[1].padStart(2,'0')}`;
+  const mMY = s.match(/^(\d{2})\/(\d{4})$/);
+  if (mMY) return `${mMY[2]}-${mMY[1]}-01`;
+  const mYMD = s.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (mYMD) return `${mYMD[1]}-${mYMD[2]}-${mYMD[3]}`;
+  if (/^\d{4}-\d{2}$/.test(s)) return s + '-01';
+  // Nomes de mês PT-BR: "Fevereiro 2026", "fev/2026", "março de 2025"
+  const sl = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\./g, '');
+  const anoM = sl.match(/\b(\d{4})\b/);
+  if (anoM) {
+    const semAno = sl.replace(/\b\d{4}\b/, '').replace(/\bde\b/, '')
+                     .replace(/[\/\-_,]/g, ' ').replace(/\s+/g, ' ').trim();
+    const mesNum = MES_MAP_NORM[semAno];
+    if (mesNum) return `${anoM[1]}-${String(mesNum).padStart(2,'0')}-01`;
+  }
+  // Serial Excel
+  const n = parseFloat(s);
+  if (!isNaN(n) && n > 40000 && n < 60000) {
+    const d = new Date(Math.round((n - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+  return '';
+}
+
+function normalizeCols(rows) {
+  return rows.map(r => {
+    const n = {};
+    Object.keys(r).forEach(k => {
+      const key = k.trim().toLowerCase().replace(/\s+/g, '_');
+      const val = typeof r[k] === 'string' ? r[k].trim() : r[k];
+      n[key] = DATE_FIELDS_NORM.includes(key) && val ? normalizeDate(val) : val;
+    });
+    return n;
+  });
+}
+
+function parseCSV(url) {
+  return new Promise((res, rej) => {
+    Papa.parse(url, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      withCredentials: false,
+      complete: r => res(r.data || []),
+      error: (err) => rej(new Error('Falha ao carregar: ' + url.substring(0, 60) + '…'))
+    });
+  });
+}
+
+async function loadAll() {
+  const keys = ['fVagas','fDescanso','fOffboarding','fTurnover','fTurnoverAnual'];
+  const urls = [URLS.fVagas, URLS.fDescanso, URLS.fOffboarding, URLS.fTurnover, URLS.fTurnoverAnual];
+  const results = await Promise.all(urls.map(parseCSV));
+  keys.forEach((k, i) => { DB[k] = normalizeCols(results[i]); });
+}
+
+/* ── FILTERS ── */
+function populateGlobalFilters() {
+  const vagas = DB.fVagas;
+
+  const anos = [...new Set(vagas.map(r => r.ano).filter(Boolean))].sort((a,b) => b - a);
+  const fAno = document.getElementById('f-ano');
+  anos.forEach(a => { const o = new Option(a, a); fAno.appendChild(o); });
+
+  const mesPairs = [];
+  const seen = new Set();
+  vagas.forEach(r => {
+    if (!r.data_abertura) return;
+    const d = new Date(r.data_abertura);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!seen.has(key)) { seen.add(key); mesPairs.push({ key, label: `${MONTHS_PT[d.getMonth()]} ${d.getFullYear()}`, ts: d.getTime() }); }
+  });
+  mesPairs.sort((a,b) => b.ts - a.ts);
+  const fMes = document.getElementById('f-mes');
+  mesPairs.forEach(m => { const o = new Option(m.label, m.key); fMes.appendChild(o); });
+
+  const celulas = [...new Set(vagas.map(r => r.celula).filter(Boolean))].sort();
+  const fCelula = document.getElementById('f-celula');
+  celulas.forEach(c => { const o = new Option(c, c); fCelula.appendChild(o); });
+}
+
+function populateSubFilters(tab) {
+  const sb = document.getElementById('subbar');
+  sb.innerHTML = '';
+
+  if (tab === 'tab1') {
+    addSubFilter(sb, 'DEPARTAMENTO', 'f-dept', getUnique(DB.fVagas, 'departamento'));
+    addSubFilter(sb, 'FORMATO', 'f-formato', ['PJ','Estágio']);
+    addSubFilter(sb, 'RECRUTADOR', 'f-recrutador', getUnique(DB.fVagas, 'recrutador'));
+    addSubFilter(sb, 'SITUAÇÃO', 'f-situacao', ['Concluído','Em Andamento']);
+  } else if (tab === 'tab2') {
+    addSubFilter(sb, 'DEPARTAMENTO', 'f-dept', getUnique(DB.fVagas, 'departamento'));
+    addSubFilter(sb, 'FORMATO', 'f-formato', ['PJ','Estágio']);
+  } else if (tab === 'tab3') {
+    addSubFilter(sb, 'DEPARTAMENTO', 'f-dept', getUnique(DB.fVagas, 'departamento'));
+    addSubFilter(sb, 'FORMATO', 'f-formato', ['PJ','Estágio']);
+    addSubFilter(sb, 'MOTIVO DESLIG.', 'f-motivo', ['Voluntário','Involuntário']);
+  } else if (tab === 'tab4') {
+    addSubFilter(sb, 'LIDERANÇA', 'f-lideranca', getUnique(DB.fDescanso, 'lideranca'));
+    addSubFilter(sb, 'DOC. OK', 'f-docok', ['Sim','Não']);
+  }
+}
+
+function addSubFilter(container, label, id, options) {
+  const wrap = document.createElement('div');
+  wrap.className = 'filter-wrap';
+
+  const lbl = document.createElement('span');
+  lbl.className = 'filter-label';
+  lbl.textContent = label;
+
+  const sel = document.createElement('select');
+  sel.className = 'filter-select';
+  sel.id = id;
+  sel.innerHTML = '<option value="">Todos</option>';
+  options.forEach(o => { const opt = new Option(o, o); sel.appendChild(opt); });
+  sel.addEventListener('change', onFilterChange);
+
+  const rst = document.createElement('button');
+  rst.className = 'filter-reset';
+  rst.dataset.target = id;
+  rst.textContent = '×';
+  rst.addEventListener('click', () => { sel.value = ''; onFilterChange(); });
+
+  wrap.appendChild(lbl); wrap.appendChild(sel); wrap.appendChild(rst);
+  container.appendChild(wrap);
+}
+
+function getUnique(arr, field) {
+  return [...new Set(arr.map(r => r[field]).filter(Boolean))].sort();
+}
+
+function getFilterValue(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+/* ── FILTER APPLICATION ── */
+function filterVagas(dateField = 'data_abertura') {
+  const ano = getFilterValue('f-ano');
+  const mes = getFilterValue('f-mes');
+  const celula = getFilterValue('f-celula');
+  const dept = getFilterValue('f-dept');
+  const formato = getFilterValue('f-formato');
+  const recrutador = getFilterValue('f-recrutador');
+  const situacao = getFilterValue('f-situacao');
+
+  return DB.fVagas.filter(r => {
+    if (ano && String(r.ano) !== ano) return false;
+    if (mes && r[dateField]) {
+      const d = new Date(r[dateField]);
+      if (!isNaN(d)) {
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if (key !== mes) return false;
+      }
+    }
+    if (celula && r.celula !== celula) return false;
+    if (dept && r.departamento !== dept) return false;
+    if (formato && r.formato !== formato) return false;
+    if (recrutador && r.recrutador !== recrutador) return false;
+    if (situacao && r.situacao_atual !== situacao) return false;
+    return true;
+  });
+}
+
+/* ── CHART HELPERS ── */
+Chart.register(ChartDataLabels);
+
+const DL_BASE = {
+  color: '#ffffff',
+  font: { family: "'DM Sans', sans-serif", size: 11, weight: '600' },
+  clip: false
+};
+
+const chartDefaults = {
+  plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: {
+    backgroundColor: '#1a1a2e',
+    borderColor: '#2a2a4a',
+    borderWidth: 1,
+    titleColor: '#ffffff',
+    bodyColor: '#aaaacc',
+    padding: 10
+  }},
+  scales: {}
+};
+
+function darkScales(horizontal = false) {
+  const base = {
+    ticks: { color: '#aaaacc', font: { size: 11 } },
+    grid: { color: 'rgba(42,42,74,0.6)' },
+    border: { color: 'transparent' }
+  };
+  return horizontal
+    ? { x: { ...base, grid: { color: 'rgba(42,42,74,0.6)' } }, y: { ...base, grid: { display: false } } }
+    : { x: { ...base, grid: { display: false } }, y: { ...base } };
+}
+
+function destroyChart(key) {
+  if (charts1[key]) { charts1[key].destroy(); delete charts1[key]; }
+}
+
+/* ── ABA 1 RENDER ── */
+function renderTab1() {
+  const data = filterVagas('data_abertura');
+
+  // Period label
+  const ano = getFilterValue('f-ano');
+  const mes = getFilterValue('f-mes');
+  const mesLabel = mes ? document.querySelector(`#f-mes option[value="${mes}"]`)?.textContent : '';
+  document.getElementById('tab1-period-label').textContent =
+    mesLabel || (ano ? `Período de ${ano}` : 'Todos os Períodos');
+
+  // KPIs
+  const abertas = data.filter(r => !parseBool(r.vaga_fechada)).length;
+  const aprovadas = data.filter(r => parseBool(r.aprovacao)).length;
+  const concluidos = data.filter(r => r.situacao_atual === 'Concluído').length;
+  const andamento = data.filter(r => r.situacao_atual === 'Em Andamento').length;
+
+  const fechadas = data.filter(r => parseBool(r.vaga_fechada));
+  const slaMedia = fechadas.length ? (fechadas.reduce((s,r) => s + toFloat(r.sla_dias), 0) / fechadas.length).toFixed(0) : '—';
+  const noPrazo = fechadas.filter(r => parseBool(r.fechada_no_prazo)).length;
+
+  const deptCount = {};
+  const celulaCount = {};
+  data.forEach(r => {
+    if (r.departamento) deptCount[r.departamento] = (deptCount[r.departamento]||0)+1;
+    if (r.celula) celulaCount[r.celula] = (celulaCount[r.celula]||0)+1;
+  });
+  const topDept = Object.entries(deptCount).sort((a,b)=>b[1]-a[1])[0];
+  const topCelula = Object.entries(celulaCount).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('kpi1').innerHTML = `
+    ${kpiCard('VAGAS ABERTAS', abertas, `${aprovadas} aprovadas`)}
+    ${kpiCard('PROCESSOS CONCLUÍDOS', concluidos, `${andamento} em andamento`)}
+    ${kpiCard('DIAS PARA FECHAR', slaMedia, `${noPrazo}/${fechadas.length} no prazo`)}
+    ${kpiCard('ÁREA LÍDER', topDept ? topDept[0] : '—', topDept ? `${topCelula?.[0]||''}: célula #1` : '', 'large')}
+  `;
+
+  // Chart 1: Vagas por Departamento (horizontal bar)
+  destroyChart('dept');
+  const deptEntries = Object.entries(deptCount).sort((a,b)=>b[1]-a[1]);
+  const ctx1 = document.getElementById('ch-dept').getContext('2d');
+  charts1.dept = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: deptEntries.map(e=>e[0]),
+      datasets: [{ data: deptEntries.map(e=>e[1]), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 16 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 36 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: ctx => ` ${ctx.raw} vagas` } },
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', formatter: v => v }
+      },
+      scales: darkScales(true)
+    }
+  });
+
+  // Chart 2: Canais de Atração (donut)
+  destroyChart('canal');
+  const canalCount = {};
+  data.forEach(r => { if (r.canal_atracao) canalCount[r.canal_atracao] = (canalCount[r.canal_atracao]||0)+1; });
+  const canalEntries = Object.entries(canalCount).sort((a,b)=>b[1]-a[1]);
+  const total2 = canalEntries.reduce((s,e)=>s+e[1],0);
+  const ctx2 = document.getElementById('ch-canal').getContext('2d');
+  charts1.canal = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: canalEntries.map(e=>e[0]),
+      datasets: [{ data: canalEntries.map(e=>e[1]), backgroundColor: COLORS, borderWidth: 2, borderColor: '#1a1a2e', hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { display: true, position: 'right', labels: { color: '#aaaacc', font: { size: 11 }, boxWidth: 12, padding: 8 }},
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw/total2)*100).toFixed(1)}%)`
+        }},
+        datalabels: {
+          ...DL_BASE,
+          font: { size: 10, weight: '700' },
+          formatter: (v) => v > 0 ? `${((v/total2)*100).toFixed(1)}%` : '',
+          display: ctx => (ctx.dataset.data[ctx.dataIndex] / total2) >= 0.05
+        }
+      }
+    }
+  });
+
+  // Chart 3: Vagas fechadas por mês (line)
+  destroyChart('fechadas');
+  const fechMes = {};
+  data.filter(r => r.data_fechamento_vaga && parseBool(r.vaga_fechada)).forEach(r => {
+    const d = new Date(r.data_fechamento_vaga);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    fechMes[key] = (fechMes[key]||0)+1;
+  });
+  const fechKeys = Object.keys(fechMes).sort();
+  const ctx3 = document.getElementById('ch-fechadas').getContext('2d');
+  charts1.fechadas = new Chart(ctx3, {
+    type: 'line',
+    data: {
+      labels: fechKeys.map(k => { const [y,m] = k.split('-'); return `${MONTHS_PT[parseInt(m)-1].substring(0,3).toLowerCase()}/${y.substring(2)}`; }),
+      datasets: [{
+        data: fechKeys.map(k=>fechMes[k]),
+        borderColor: '#e91e8c', backgroundColor: 'rgba(233,30,140,0.1)',
+        pointBackgroundColor: '#e91e8c', pointRadius: 5, tension: 0.3, fill: true, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        ...chartDefaults.plugins,
+        datalabels: { ...DL_BASE, anchor: 'top', align: 'top', offset: 4, formatter: v => v }
+      },
+      scales: darkScales(false)
+    }
+  });
+
+  // Chart 4: Tempo de fechamento por vaga (vertical bar)
+  destroyChart('sla');
+  const slaData = data.filter(r => parseBool(r.vaga_fechada) && r.cargo && toFloat(r.sla_dias) > 0);
+  slaData.sort((a,b) => toFloat(b.sla_dias) - toFloat(a.sla_dias));
+  const ctx4 = document.getElementById('ch-sla').getContext('2d');
+  charts1.sla = new Chart(ctx4, {
+    type: 'bar',
+    data: {
+      labels: slaData.map(r => r.cargo),
+      datasets: [{ data: slaData.map(r => toFloat(r.sla_dias)), backgroundColor: '#e91e8c', borderRadius: 3, barThickness: 14 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: ctx => ` ${ctx.raw} dias` } },
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 10, weight: '600' }, formatter: v => v }
+      },
+      scales: {
+        x: { ticks: { color: '#aaaacc', font: { size: 10 }, maxRotation: 45, minRotation: 30 }, grid: { display: false }, border: { color: 'transparent' } },
+        y: { ticks: { color: '#aaaacc', font: { size: 11 } }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  // Table
+  const tbody = document.getElementById('tbl1-body');
+  tbody.innerHTML = '';
+  const sorted = [...data].sort((a,b) => {
+    const da = a.data_fechamento_vaga ? new Date(a.data_fechamento_vaga) : new Date(0);
+    const db = b.data_fechamento_vaga ? new Date(b.data_fechamento_vaga) : new Date(0);
+    return db - da;
+  });
+  sorted.forEach(r => {
+    const mes = r.data_fechamento_vaga ? MONTHS_PT[new Date(r.data_fechamento_vaga).getMonth()] : '—';
+    const statusClass = r.situacao_atual === 'Concluído' ? 'badge-green' : r.situacao_atual === 'Em Andamento' ? 'badge-blue' : 'badge-orange';
+    tbody.insertAdjacentHTML('beforeend', `<tr>
+      <td>${r.cargo||'—'}</td>
+      <td style="color:var(--text2)">${r.cliente||'—'}</td>
+      <td>${r.departamento||'—'}</td>
+      <td>${mes}</td>
+      <td style="color:var(--text2)">${r.motivo_solicitacao||'—'}</td>
+      <td><span class="badge badge-purple">${r.formato||'—'}</span></td>
+      <td><span class="badge ${statusClass}">${r.situacao_atual||'—'}</span></td>
+      <td style="font-family:'Space Mono',monospace">${toFloat(r.sla_dias)||'—'}</td>
+    </tr>`);
+  });
+}
+
+function kpiCard(label, value, sub, size='normal') {
+  const valStyle = size === 'large' ? 'font-size:28px' : '';
+  return `<div class="kpi-card">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value" style="${valStyle}">${value}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
+/* ── NAVIGATION ── */
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === tab));
+  populateSubFilters(tab);
+  renderActiveTab();
+}
+
+function renderActiveTab() {
+  if (activeTab === 'tab1') renderTab1();
+  else if (activeTab === 'tab2') renderTab2();
+  else if (activeTab === 'tab3') renderTab3();
+  else if (activeTab === 'tab4') renderTab4();
+  else if (activeTab === 'tabComp') renderTabComp();
+}
+
+/* ── ABA 4 ── */
+let charts4 = {};
+
+function filterDescanso() {
+  const celula    = getFilterValue('f-celula');
+  const lideranca = getFilterValue('f-lideranca');
+  return DB.fDescanso.filter(r => {
+    if (celula    && r.celula    !== celula)    return false;
+    if (lideranca && r.lideranca !== lideranca) return false;
+    return true;
+  });
+}
+
+function filterOffboardingFin() {
+  const ano   = getFilterValue('f-ano');
+  const mes   = getFilterValue('f-mes');
+  const docok = getFilterValue('f-docok');
+  return DB.fOffboarding.filter(r => {
+    if (ano && r.data_desligamento) {
+      const d = new Date(r.data_desligamento);
+      if (!isNaN(d) && String(d.getFullYear()) !== ano) return false;
+    }
+    if (mes && r.data_desligamento) {
+      const d = new Date(r.data_desligamento);
+      if (!isNaN(d)) {
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if (key !== mes) return false;
+      }
+    }
+    if (docok && r.documentacao_ok !== docok) return false;
+    return true;
+  });
+}
+
+function renderTab4() {
+  Object.values(charts4).forEach(c => c.destroy());
+  charts4 = {};
+
+  const dData = filterDescanso();
+  const oData = filterOffboardingFin();
+  const hoje  = new Date();
+
+  /* ── KPIs Férias ── */
+  const negativo    = dData.filter(r => toFloat(r.saldo_atual) < 0).length;
+  const venc30      = dData.filter(r => {
+    if (!r.limite_para_tirar) return false;
+    const lim = new Date(r.limite_para_tirar);
+    if (isNaN(lim)) return false;
+    const diff = (lim - hoje) / 86400000;
+    return diff >= 0 && diff <= 30;
+  }).length;
+  const saldoMed    = dData.length
+    ? (dData.reduce((s,r) => s + toFloat(r.saldo_atual), 0) / dData.length).toFixed(1)
+    : '—';
+  const celulaAcum  = {};
+  dData.forEach(r => { if (r.celula) celulaAcum[r.celula] = (celulaAcum[r.celula]||0) + toFloat(r.saldo_atual); });
+  const topCelAcum  = Object.entries(celulaAcum).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('kpi4-ferias').innerHTML = `
+    ${kpiCardColor('SALDO NEGATIVO',      negativo,                  'colaboradores no débito',           negativo > 0 ? 'var(--red)' : 'var(--green)')}
+    ${kpiCardColor('VENCENDO EM 30 DIAS', venc30,                    'precisam tirar férias urgente',      venc30 > 0   ? 'var(--orange)' : 'var(--green)')}
+    ${kpiCardColor('SALDO MÉDIO GERAL',   saldoMed + ' dias',        'média de saldo acumulado',           'var(--cyan)')}
+    ${kpiCardColor('CÉLULA COM MAIOR ACÚMULO', topCelAcum ? topCelAcum[0] : '—', topCelAcum ? `${topCelAcum[1].toFixed(0)} dias acumulados` : '', 'var(--primary)')}
+  `;
+
+  /* 1 — Saldo por Colaborador (tabela visual) */
+  const sorted4 = [...dData].sort((a,b) => toFloat(a.saldo_atual) - toFloat(b.saldo_atual));
+  const maxAbs = Math.max(...sorted4.map(r => Math.abs(toFloat(r.saldo_atual))), 1);
+
+  const saldoWrap = document.getElementById('saldo-colab-wrap');
+  saldoWrap.innerHTML = sorted4.map(r => {
+    const v    = toFloat(r.saldo_atual);
+    const cor  = v < 0 ? '#ff5252' : v <= 10 ? '#ffab40' : '#69f0ae';
+    const pct  = Math.abs(v) / maxAbs * 100;
+    const nome = (r.colaborador || '—').split(' ').slice(0,3).join(' ');
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 16px;border-bottom:1px solid rgba(42,42,74,0.4)">
+      <span style="width:170px;font-size:12px;color:#ddd;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${r.colaborador||''}">${nome}</span>
+      <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:3px;height:10px;overflow:hidden">
+        <div style="width:${pct}%;background:${cor};height:100%;border-radius:3px;transition:width .3s"></div>
+      </div>
+      <span style="width:38px;text-align:right;font-family:'Space Mono',monospace;font-size:11px;color:${cor};flex-shrink:0">${v}</span>
+    </div>`;
+  }).join('');
+
+  /* 2 — Saldo Médio por Célula */
+  const celulaMap = {};
+  const celulaCnt = {};
+  dData.forEach(r => {
+    if (!r.celula) return;
+    celulaMap[r.celula] = (celulaMap[r.celula]||0) + toFloat(r.saldo_atual);
+    celulaCnt[r.celula] = (celulaCnt[r.celula]||0) + 1;
+  });
+  const celulaEntries = Object.keys(celulaMap).map(c => ({ label: c, value: celulaMap[c]/celulaCnt[c] }))
+    .sort((a,b) => b.value - a.value);
+  const celColors = celulaEntries.map(e => e.value < 0 ? '#ff5252' : e.value <= 10 ? '#ffab40' : '#69f0ae');
+
+  const ctx2 = document.getElementById('ch-t4-celula').getContext('2d');
+  charts4.celula = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: celulaEntries.map(e=>e.label),
+      datasets: [{ data: celulaEntries.map(e=>e.value), backgroundColor: celColors, borderRadius: 4, barThickness: 32 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 24 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.raw.toFixed(1)} dias (média)` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 11 },
+          color: (_,i) => celColors[i] || '#fff',
+          formatter: v => v.toFixed(1) }
+      },
+      scales: darkScales(false)
+    }
+  });
+
+  /* 3 — Saldo por Liderança (barras horizontais) */
+  const liderMap = {};
+  const liderCnt = {};
+  dData.forEach(r => {
+    if (!r.lideranca) return;
+    liderMap[r.lideranca] = (liderMap[r.lideranca]||0) + toFloat(r.saldo_atual);
+    liderCnt[r.lideranca] = (liderCnt[r.lideranca]||0) + 1;
+  });
+  const liderEntries = Object.keys(liderMap).map(l => ({ label: l, value: liderMap[l]/liderCnt[l] }))
+    .sort((a,b) => a.value - b.value);
+  const lidColors = liderEntries.map(e => e.value < 0 ? '#ff5252' : e.value <= 10 ? '#ffab40' : '#69f0ae');
+
+  const ctx3 = document.getElementById('ch-t4-lideranca').getContext('2d');
+  charts4.lideranca = new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: liderEntries.map(e=>e.label),
+      datasets: [{ data: liderEntries.map(e=>e.value), backgroundColor: lidColors, borderRadius: 4, barThickness: 16 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 48 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.raw.toFixed(1)} dias (média)` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 10 },
+          color: (ctx) => lidColors[ctx.dataIndex] || '#fff',
+          formatter: v => v.toFixed(1) }
+      },
+      scales: darkScales(true)
+    }
+  });
+
+  /* 4 — Tabela Vencimentos Críticos */
+  const criticos = dData.filter(r => {
+    if (!r.limite_para_tirar) return false;
+    const lim = new Date(r.limite_para_tirar);
+    if (isNaN(lim)) return false;
+    return (lim - hoje) / 86400000 <= 60;
+  }).sort((a,b) => new Date(a.limite_para_tirar) - new Date(b.limite_para_tirar));
+
+  const tbody4f = document.getElementById('tbl4-ferias');
+  tbody4f.innerHTML = '';
+  criticos.forEach(r => {
+    const lim  = new Date(r.limite_para_tirar);
+    const diff = Math.ceil((lim - hoje) / 86400000);
+    const cor  = diff <= 30 ? 'var(--red)' : 'var(--orange)';
+    const badge = diff <= 30
+      ? `<span class="badge badge-red">${diff <= 0 ? 'VENCIDO' : diff + ' dias'}</span>`
+      : `<span class="badge badge-orange">${diff} dias</span>`;
+    tbody4f.insertAdjacentHTML('beforeend', `<tr style="border-left:3px solid ${cor}">
+      <td>${r.colaborador||'—'}</td>
+      <td>${r.celula||'—'}</td>
+      <td>${r.lideranca||'—'}</td>
+      <td style="font-family:'Space Mono',monospace;color:${toFloat(r.saldo_atual)<0?'var(--red)':'var(--green)'}">${toFloat(r.saldo_atual)}</td>
+      <td>${lim.toLocaleDateString('pt-BR')}</td>
+      <td>${badge}</td>
+    </tr>`);
+  });
+  if (!criticos.length) {
+    tbody4f.innerHTML = '<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:20px">Nenhum vencimento crítico nos próximos 60 dias</td></tr>';
+  }
+
+  /* ── KPIs Rescisão ── */
+  const custoTotal  = oData.reduce((s,r) => s + toFloat(r.valor_total_rescisorio), 0);
+  const custoMedio  = oData.length ? custoTotal / oData.length : 0;
+  const docPendente = oData.filter(r => (r.documentacao_ok||'').trim() !== 'Sim').length;
+  const pctPend     = oData.length ? (docPendente/oData.length*100).toFixed(1) : '0.0';
+
+  const diasPagto = oData.filter(r => r.data_desligamento && r.data_pagamento_rescisao).map(r => {
+    const d1 = new Date(r.data_desligamento);
+    const d2 = new Date(r.data_pagamento_rescisao);
+    return isNaN(d1)||isNaN(d2) ? null : Math.max(0, Math.ceil((d2-d1)/86400000));
+  }).filter(v => v !== null);
+  const mediaPagto = diasPagto.length ? (diasPagto.reduce((s,v)=>s+v,0)/diasPagto.length).toFixed(0) : '—';
+
+  const fmtBRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+
+  document.getElementById('kpi4-rescisao').innerHTML = `
+    ${kpiCardColor('CUSTO TOTAL RESCISÓRIO',        fmtBRL(custoTotal),  `${oData.length} desligamentos`,       'var(--primary)')}
+    ${kpiCardColor('CUSTO MÉDIO POR DESLIGAMENTO',  fmtBRL(custoMedio),  'média por colaborador',               'var(--secondary)')}
+    ${kpiCardColor('DOCUMENTAÇÃO PENDENTE',         docPendente,         `${pctPend}% do total`,                docPendente > 0 ? 'var(--red)' : 'var(--green)')}
+    ${kpiCardColor('TEMPO MÉDIO ATÉ PAGAMENTO',     mediaPagto !== '—' ? mediaPagto + ' dias' : '—', 'entre desligamento e pagamento', 'var(--cyan)')}
+  `;
+
+  /* 5 — Custo por Mês */
+  const custoMes = {};
+  oData.forEach(r => {
+    if (!r.data_desligamento) return;
+    const d = new Date(r.data_desligamento);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    custoMes[key] = (custoMes[key]||0) + toFloat(r.valor_total_rescisorio);
+  });
+  const cmKeys = Object.keys(custoMes).sort();
+  const cmLabels = cmKeys.map(k => { const [y,m] = k.split('-'); return `${MONTHS_PT[parseInt(m)-1].substring(0,3)}/${y.substring(2)}`; });
+
+  const ctx5 = document.getElementById('ch-t4-customes').getContext('2d');
+  charts4.customes = new Chart(ctx5, {
+    type: 'bar',
+    data: {
+      labels: cmLabels,
+      datasets: [{ data: cmKeys.map(k=>custoMes[k]), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 28 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 24 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${fmtBRL(c.raw)}` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 9 },
+          formatter: v => `R$${(v/1000).toFixed(0)}k` }
+      },
+      scales: {
+        x: { ticks: { color: '#aaaacc', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } },
+        y: { ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => `R$${(v/1000).toFixed(0)}k` }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* 6 — Breakdown por Motivo (barras empilhadas) */
+  const motivosOff = [...new Set(oData.map(r=>r.motivo_desligamento).filter(Boolean))];
+  const breakKeys  = ['proporcional_valor_mensal','valor_decimo_terceiro','valor_descanso'];
+  const breakLabels = ['Proporcional Mensal','13º Proporcional','Descanso'];
+  const breakColors = ['#e91e8c','#9c27b0','#00bcd4'];
+
+  const ctx6 = document.getElementById('ch-t4-breakdown').getContext('2d');
+  charts4.breakdown = new Chart(ctx6, {
+    type: 'bar',
+    data: {
+      labels: motivosOff,
+      datasets: breakKeys.map((k,i) => ({
+        label: breakLabels[i],
+        data: motivosOff.map(m => {
+          const sub = oData.filter(r => r.motivo_desligamento === m);
+          return sub.length ? sub.reduce((s,r)=>s+toFloat(r[k]),0)/sub.length : 0;
+        }),
+        backgroundColor: breakColors[i],
+        borderRadius: 2
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: {
+        legend: { display: true, labels: { color: '#aaaacc', font: { size: 10 }, boxWidth: 10 }},
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.dataset.label}: ${fmtBRL(c.raw)}` }},
+        datalabels: { ...DL_BASE, font: { size: 9 }, formatter: v => v > 0 ? `R$${(v/1000).toFixed(0)}k` : '' }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#aaaacc' }, grid: { display: false }, border: { color: 'transparent' } },
+        y: { stacked: true, ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => `R$${(v/1000).toFixed(0)}k` }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* 7 — Custo Médio por Cargo top 10 */
+  const cargoCusto = {};
+  const cargoCustoCnt = {};
+  oData.forEach(r => {
+    if (!r.cargo) return;
+    cargoCusto[r.cargo]    = (cargoCusto[r.cargo]||0)    + toFloat(r.valor_total_rescisorio);
+    cargoCustoCnt[r.cargo] = (cargoCustoCnt[r.cargo]||0) + 1;
+  });
+  const top10custo = Object.keys(cargoCusto)
+    .map(c => ({ label: c, value: cargoCusto[c]/cargoCustoCnt[c] }))
+    .sort((a,b)=>b.value-a.value).slice(0,10);
+
+  const ctx7 = document.getElementById('ch-t4-custocargo').getContext('2d');
+  charts4.custocargo = new Chart(ctx7, {
+    type: 'bar',
+    data: {
+      labels: top10custo.map(e=>e.label),
+      datasets: [{ data: top10custo.map(e=>e.value), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 18 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 64 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${fmtBRL(c.raw)}` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 10 },
+          formatter: v => `R$${(v/1000).toFixed(1)}k` }
+      },
+      scales: {
+        ...darkScales(true),
+        x: { ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => `R$${(v/1000).toFixed(0)}k` }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* 8 — Tabela Documentação Pendente */
+  const pendentes = oData.filter(r => (r.documentacao_ok||'').trim() !== 'Sim');
+  const tbody4d = document.getElementById('tbl4-docs');
+  tbody4d.innerHTML = '';
+  pendentes.forEach(r => {
+    const dDes = r.data_desligamento ? new Date(r.data_desligamento).toLocaleDateString('pt-BR') : '—';
+    const dDist = r.data_envio_distrato ? new Date(r.data_envio_distrato).toLocaleDateString('pt-BR') : '—';
+    const docClass = !r.documentacao_ok || r.documentacao_ok.trim() === '' ? 'badge-orange' : 'badge-red';
+    tbody4d.insertAdjacentHTML('beforeend', `<tr style="border-left:3px solid var(--red)">
+      <td>${r.colaborador||'—'}</td>
+      <td style="color:var(--text2)">${r.cargo||'—'}</td>
+      <td>${dDes}</td>
+      <td><span class="badge ${docClass}">${r.documentacao_ok||'Pendente'}</span></td>
+      <td style="color:var(--text2)">${r.aprovacao_sabrina||'—'}</td>
+      <td>${dDist}</td>
+      <td style="font-family:'Space Mono',monospace">${fmtBRL(toFloat(r.valor_total_rescisorio))}</td>
+    </tr>`);
+  });
+  if (!pendentes.length) {
+    tbody4d.innerHTML = '<tr><td colspan="7" style="color:var(--green);text-align:center;padding:20px">✓ Toda documentação está em ordem</td></tr>';
+  }
+}
+
+function kpiCardColor(label, value, sub, color) {
+  return `<div class="kpi-card">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value" style="color:${color}">${value}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
+/* ── ABA 3 ── */
+let charts3 = {};
+
+function filterOffboarding() {
+  const ano    = getFilterValue('f-ano');
+  const mes    = getFilterValue('f-mes');
+  const motivo = getFilterValue('f-motivo');
+
+  return DB.fOffboarding.filter(r => {
+    if (ano && r.data_desligamento) {
+      const d = new Date(r.data_desligamento);
+      if (!isNaN(d) && String(d.getFullYear()) !== ano) return false;
+    }
+    if (mes && r.data_desligamento) {
+      const d = new Date(r.data_desligamento);
+      if (!isNaN(d)) {
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if (key !== mes) return false;
+      }
+    }
+    if (motivo && r.motivo_desligamento !== motivo) return false;
+    return true;
+  });
+}
+
+function filterTurnover() {
+  const ano = getFilterValue('f-ano');
+  const mes = getFilterValue('f-mes');
+  return DB.fTurnover.filter(r => {
+    if (ano && String(r.ano) !== ano) return false;
+    if (mes && r.mes_referencia) {
+      const d = new Date(r.mes_referencia);
+      if (!isNaN(d)) {
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if (key !== mes) return false;
+      }
+    }
+    return true;
+  });
+}
+
+function avgByGroup(data, groupField, valueField) {
+  const sums = {}, counts = {};
+  data.forEach(r => {
+    const g = (r[groupField]||'').trim();
+    const v = toFloat(r[valueField]);
+    if (!g || v === 0) return;
+    sums[g]   = (sums[g]   || 0) + v;
+    counts[g] = (counts[g] || 0) + 1;
+  });
+  return Object.keys(sums).map(g => ({ label: g, value: sums[g] / counts[g] }));
+}
+
+function renderTab3() {
+  const vData = filterVagas('data_fechamento_vaga');
+  const oData = filterOffboarding();
+  const tData = filterTurnover();
+
+  Object.values(charts3).forEach(c => c.destroy());
+  charts3 = {};
+
+  /* 1 — Motivo x Formato (barras agrupadas) */
+  const motivos  = [...new Set(vData.map(r=>r.motivo_solicitacao).filter(Boolean))];
+  const formatos = ['PJ','Estágio'];
+  const fmtColors = { 'PJ': '#9c27b0', 'Estágio': '#e91e8c' };
+
+  const ctx1 = document.getElementById('ch-t3-motivofmt').getContext('2d');
+  charts3.motivofmt = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: motivos,
+      datasets: formatos.map(fmt => ({
+        label: fmt,
+        data: motivos.map(m => vData.filter(r => r.motivo_solicitacao === m && r.formato === fmt).length),
+        backgroundColor: fmtColors[fmt],
+        borderRadius: 4
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: {
+        legend: { display: true, labels: { color: '#aaaacc', font: { size: 11 }, boxWidth: 12 }},
+        tooltip: { ...chartDefaults.plugins.tooltip },
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 11 }, formatter: v => v || '' }
+      },
+      scales: darkScales(false)
+    }
+  });
+
+  /* 2 — Departamento x Salário Médio (barras horizontais) */
+  const deptSal = avgByGroup(vData.filter(r => parseBool(r.aprovacao)), 'departamento', 'salario');
+  deptSal.sort((a,b) => b.value - a.value);
+
+  const ctx2 = document.getElementById('ch-t3-deptsalario').getContext('2d');
+  charts3.deptsalario = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: deptSal.map(e=>e.label),
+      datasets: [{ data: deptSal.map(e=>e.value), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 16 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 60 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` R$ ${c.raw.toLocaleString('pt-BR',{maximumFractionDigits:0})}` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 10 },
+          formatter: v => `R$ ${(v/1000).toFixed(1)}k` }
+      },
+      scales: {
+        ...darkScales(true),
+        x: { ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => `R$${(v/1000).toFixed(0)}k` }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* 3 — Célula x Volume (barras verticais) */
+  const celulaCount = {};
+  vData.forEach(r => { if (r.celula) celulaCount[r.celula] = (celulaCount[r.celula]||0)+1; });
+  const celulaEntries = Object.entries(celulaCount).sort((a,b)=>b[1]-a[1]);
+
+  const ctx3 = document.getElementById('ch-t3-celula').getContext('2d');
+  charts3.celula = new Chart(ctx3, {
+    type: 'bar',
+    data: {
+      labels: celulaEntries.map(e=>e[0]),
+      datasets: [{ data: celulaEntries.map(e=>e[1]), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 28 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 24 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', formatter: v => v }
+      },
+      scales: darkScales(false)
+    }
+  });
+
+  /* 4 — Canal x Tempo Médio SLA (barras verticais) */
+  const canalSla = avgByGroup(vData.filter(r => parseBool(r.vaga_fechada)), 'canal_atracao', 'sla_dias');
+  canalSla.sort((a,b) => b.value - a.value);
+
+  const ctx4 = document.getElementById('ch-t3-canalsla').getContext('2d');
+  charts3.canalsla = new Chart(ctx4, {
+    type: 'bar',
+    data: {
+      labels: canalSla.map(e=>e.label),
+      datasets: [{ data: canalSla.map(e=>e.value), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 28 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 24 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.raw.toFixed(1)} dias` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 10 }, formatter: v => v.toFixed(1) }
+      },
+      scales: darkScales(false)
+    }
+  });
+
+  /* 5 — Formato x Faixa Salarial (barras horizontais agrupadas) */
+  const fmtSal = {};
+  vData.forEach(r => {
+    const f = (r.formato||'').trim();
+    const s = toFloat(r.salario);
+    if (!f || s === 0) return;
+    if (!fmtSal[f]) fmtSal[f] = [];
+    fmtSal[f].push(s);
+  });
+  const fmtLabels = Object.keys(fmtSal);
+  const salMin  = fmtLabels.map(f => Math.min(...fmtSal[f]));
+  const salMed  = fmtLabels.map(f => fmtSal[f].reduce((s,v)=>s+v,0)/fmtSal[f].length);
+  const salMax  = fmtLabels.map(f => Math.max(...fmtSal[f]));
+
+  const ctx5 = document.getElementById('ch-t3-fmtsalario').getContext('2d');
+  charts3.fmtsalario = new Chart(ctx5, {
+    type: 'bar',
+    data: {
+      labels: fmtLabels,
+      datasets: [
+        { label: 'Salário Médio',  data: salMed, backgroundColor: '#e91e8c', borderRadius: 3, barThickness: 14 },
+        { label: 'Salário Máximo', data: salMax, backgroundColor: '#00bcd4', borderRadius: 3, barThickness: 14 },
+        { label: 'Salário Mínimo', data: salMin, backgroundColor: '#69f0ae', borderRadius: 3, barThickness: 14 },
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 60 } },
+      plugins: {
+        legend: { display: true, labels: { color: '#aaaacc', font: { size: 10 }, boxWidth: 10 }},
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` R$ ${c.raw.toLocaleString('pt-BR',{maximumFractionDigits:0})}` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 10 },
+          formatter: v => `R$${(v/1000).toFixed(1)}k` }
+      },
+      scales: {
+        ...darkScales(true),
+        x: { ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => `R$${(v/1000).toFixed(0)}k` }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* 6 — Cargo x Tempo Médio Fechamento top 15 */
+  const cargoSla = avgByGroup(vData.filter(r => parseBool(r.vaga_fechada)), 'cargo', 'sla_dias');
+  cargoSla.sort((a,b) => b.value - a.value);
+  const top15 = cargoSla.slice(0,15);
+
+  const ctx6 = document.getElementById('ch-t3-cargosla').getContext('2d');
+  charts3.cargosla = new Chart(ctx6, {
+    type: 'bar',
+    data: {
+      labels: top15.map(e=>e.label),
+      datasets: [{ data: top15.map(e=>e.value), backgroundColor: '#e91e8c', borderRadius: 3, barThickness: 14 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.raw.toFixed(1)} dias` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', font: { size: 9 }, formatter: v => v.toFixed(0) }
+      },
+      scales: {
+        x: { ticks: { color: '#aaaacc', font: { size: 9 }, maxRotation: 45, minRotation: 30 }, grid: { display: false }, border: { color: 'transparent' } },
+        y: { ticks: { color: '#aaaacc', font: { size: 10 } }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* ── KPIs Offboarding ── */
+  const totalDeslig   = oData.length;
+  const voluntarios   = oData.filter(r => r.motivo_desligamento === 'Voluntário').length;
+  const involuntarios = oData.filter(r => r.motivo_desligamento === 'Involuntário').length;
+  const pctVol  = totalDeslig ? (voluntarios/totalDeslig*100).toFixed(1) : '0.0';
+  const pctInv  = totalDeslig ? (involuntarios/totalDeslig*100).toFixed(1) : '0.0';
+
+  const tTurnover  = tData.reduce((s,r) => s + toFloat(r.demitidos), 0);
+  const tPessoal   = tData.reduce((s,r) => s + toFloat(r.total_pessoal), 0);
+  const pctTurnover = tPessoal ? (tTurnover/tPessoal*100).toFixed(1) : '—';
+
+  document.getElementById('kpi3').innerHTML = `
+    ${kpiCard('TOTAL DESLIGAMENTOS', totalDeslig, 'no período filtrado')}
+    ${kpiCard('VOLUNTÁRIOS',   `${voluntarios}`, `${pctVol}% do total`)}
+    ${kpiCard('INVOLUNTÁRIOS', `${involuntarios}`, `${pctInv}% do total`)}
+    ${kpiCard('% TURNOVER', pctTurnover !== '—' ? pctTurnover+'%' : '—', `${tTurnover} saídas / ${tPessoal} headcount`)}
+  `;
+
+  /* 7 — Desligamentos por Mês (barras empilhadas) */
+  const mesDeslig = {};
+  oData.forEach(r => {
+    if (!r.data_desligamento) return;
+    const d = new Date(r.data_desligamento);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!mesDeslig[key]) mesDeslig[key] = { vol: 0, inv: 0 };
+    if (r.motivo_desligamento === 'Voluntário')   mesDeslig[key].vol++;
+    if (r.motivo_desligamento === 'Involuntário') mesDeslig[key].inv++;
+  });
+  const mesKeys = Object.keys(mesDeslig).sort();
+  const mesLabels = mesKeys.map(k => { const [y,m] = k.split('-'); return `${MONTHS_PT[parseInt(m)-1].substring(0,3)}/${y.substring(2)}`; });
+
+  const ctx7 = document.getElementById('ch-t3-desligmes').getContext('2d');
+  charts3.desligmes = new Chart(ctx7, {
+    type: 'bar',
+    data: {
+      labels: mesLabels,
+      datasets: [
+        { label: 'Voluntário',   data: mesKeys.map(k=>mesDeslig[k].vol), backgroundColor: '#e91e8c', borderRadius: 3 },
+        { label: 'Involuntário', data: mesKeys.map(k=>mesDeslig[k].inv), backgroundColor: '#9c27b0', borderRadius: 3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: {
+        legend: { display: true, labels: { color: '#aaaacc', font: { size: 11 }, boxWidth: 12 }},
+        tooltip: { ...chartDefaults.plugins.tooltip },
+        datalabels: { ...DL_BASE, font: { size: 10 }, formatter: v => v > 0 ? v : '' }
+      },
+      scales: { ...darkScales(false), x: { stacked: true, ticks: { color: '#aaaacc', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } }, y: { stacked: true, ticks: { color: '#aaaacc', font: { size: 10 } }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } } }
+    }
+  });
+
+  /* 8 — % Turnover Mensal (linha) */
+  const tvSorted = [...tData].sort((a,b) => new Date(a.mes_referencia) - new Date(b.mes_referencia));
+  const tvLabels = tvSorted.map(r => { const d = new Date(r.mes_referencia); return `${MONTHS_PT[d.getMonth()].substring(0,3)}/${String(d.getFullYear()).substring(2)}`; });
+  const tvVals   = tvSorted.map(r => {
+    const dem = toFloat(r.demitidos);
+    const tot = toFloat(r.total_pessoal);
+    return tot > 0 ? parseFloat((dem/tot*100).toFixed(2)) : 0;
+  });
+
+  const ctx8 = document.getElementById('ch-t3-turnover').getContext('2d');
+  charts3.turnover = new Chart(ctx8, {
+    type: 'line',
+    data: {
+      labels: tvLabels,
+      datasets: [{
+        data: tvVals,
+        borderColor: '#e91e8c', backgroundColor: 'rgba(233,30,140,0.1)',
+        pointBackgroundColor: '#e91e8c', pointRadius: 5, tension: 0.3, fill: true, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.raw}%` }},
+        datalabels: { ...DL_BASE, anchor: 'top', align: 'top', offset: 4, font: { size: 10 }, formatter: v => v+'%' }
+      },
+      scales: {
+        ...darkScales(false),
+        y: { ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => v+'%' }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* 9 — Desligamentos por Cargo top 10 */
+  const cargoCnt = {};
+  oData.forEach(r => { if (r.cargo) cargoCnt[r.cargo] = (cargoCnt[r.cargo]||0)+1; });
+  const top10cargo = Object.entries(cargoCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  const ctx9 = document.getElementById('ch-t3-cargosaida').getContext('2d');
+  charts3.cargosaida = new Chart(ctx9, {
+    type: 'bar',
+    data: {
+      labels: top10cargo.map(e=>e[0]),
+      datasets: [{ data: top10cargo.map(e=>e[1]), backgroundColor: '#e91e8c', borderRadius: 4, barThickness: 18 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 36 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', formatter: v => v }
+      },
+      scales: darkScales(true)
+    }
+  });
+}
+
+/* ── ABA 2 ── */
+const COLORS_DIV = {
+  'Feminino':         '#e91e8c',
+  'Mulher Cis':       '#f06292',
+  'Homem Cis':        '#9c27b0',
+  'Branca':           '#e91e8c',
+  'Negra':            '#9c27b0',
+  'Parda':            '#00bcd4',
+  'Amarela':          '#ffab40',
+  'Indígena':         '#69f0ae',
+  'Heterossexual':    '#e91e8c',
+  'Bissexual':        '#9c27b0',
+  'Lésbica':          '#00bcd4',
+  'Gay':              '#ffab40',
+  'Transgênero':      '#69f0ae',
+  'Pansexual':        '#ff5252',
+};
+
+const COMBO_COLORS = [
+  '#e91e8c','#f06292','#9c27b0','#ce93d8','#00bcd4',
+  '#80deea','#ffab40','#69f0ae','#ff5252','#7986cb',
+  '#4db6ac','#dce775','#ff8a65','#a1887f','#90a4ae'
+];
+
+let charts2 = {};
+
+function filterVagasDiv() {
+  const ano     = getFilterValue('f-ano');
+  const mes     = getFilterValue('f-mes');
+  const celula  = getFilterValue('f-celula');
+  const dept    = getFilterValue('f-dept');
+  const formato = getFilterValue('f-formato');
+
+  return DB.fVagas.filter(r => {
+    if (!r.nome_contratado || r.nome_contratado.trim() === '') return false;
+    if (ano && String(r.ano) !== ano) return false;
+    if (mes && r.data_abertura) {
+      const d = new Date(r.data_abertura);
+      if (!isNaN(d)) {
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        if (key !== mes) return false;
+      }
+    }
+    if (celula  && r.celula       !== celula)  return false;
+    if (dept    && r.departamento !== dept)    return false;
+    if (formato && r.formato      !== formato) return false;
+    return true;
+  });
+}
+
+function countField(data, field) {
+  const map = {};
+  data.forEach(r => {
+    const v = (r[field]||'').trim();
+    if (v) map[v] = (map[v]||0) + 1;
+  });
+  return map;
+}
+
+function donutChart(canvasId, countMap, colorMap) {
+  const entries = Object.entries(countMap).sort((a,b)=>b[1]-a[1]);
+  const total   = entries.reduce((s,e)=>s+e[1],0);
+  const colors  = entries.map((e,i)=> colorMap[e[0]] || COMBO_COLORS[i % COMBO_COLORS.length]);
+  const ctx     = document.getElementById(canvasId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(e=>e[0]),
+      datasets: [{
+        data: entries.map(e=>e[1]),
+        backgroundColor: colors,
+        borderWidth: 2, borderColor: '#1a1a2e', hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { color: '#aaaacc', font: { size: 10 }, boxWidth: 10, padding: 6 }},
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.raw} (${((ctx.raw/total)*100).toFixed(1)}%)`
+        }},
+        datalabels: {
+          ...DL_BASE,
+          font: { size: 10, weight: '700' },
+          formatter: (v) => `${((v/total)*100).toFixed(1)}%`,
+          display: ctx => (ctx.dataset.data[ctx.dataIndex]/total) >= 0.05
+        }
+      }
+    }
+  });
+}
+
+function renderTab2() {
+  const data = filterVagasDiv();
+  Object.values(charts2).forEach(c => c.destroy());
+  charts2 = {};
+
+  /* ── DONUTS ── */
+  const generoMap  = countField(data, 'genero');
+  const racaMap    = countField(data, 'raca_cor');
+  const orientMap  = countField(data, 'orientacao_sexual');
+
+  // insight labels
+  const totalGen = Object.values(generoMap).reduce((s,v)=>s+v,0);
+  const pctMulher = totalGen
+    ? (((generoMap['Feminino']||0)+(generoMap['Mulher Cis']||0))/totalGen*100).toFixed(0)
+    : 0;
+  document.getElementById('d2-genero-insight').textContent =
+    totalGen ? `Maior presença ${pctMulher >= 50 ? 'feminina' : 'masculina'} (${pctMulher >= 50 ? pctMulher : 100-pctMulher}%)` : '—';
+
+  const totalRaca = Object.values(racaMap).reduce((s,v)=>s+v,0);
+  const topRaca   = Object.entries(racaMap).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('d2-raca-insight').textContent =
+    topRaca ? `Maior grupo: ${topRaca[0]} (${(topRaca[1]/totalRaca*100).toFixed(0)}%)` : '—';
+
+  const totalOrient = Object.values(orientMap).reduce((s,v)=>s+v,0);
+  const pctHetero   = totalOrient ? ((orientMap['Heterossexual']||0)/totalOrient*100).toFixed(0) : 0;
+  document.getElementById('d2-orient-insight').textContent =
+    totalOrient ? `Heterossexual: ${pctHetero}% do total` : '—';
+
+  charts2.genero = donutChart('ch-d2-genero', generoMap, COLORS_DIV);
+  charts2.raca   = donutChart('ch-d2-raca',   racaMap,   COLORS_DIV);
+  charts2.orient = donutChart('ch-d2-orient', orientMap, COLORS_DIV);
+
+  /* ── GÊNERO x RAÇA (barras horizontais) ── */
+  const comboMap = {};
+  data.forEach(r => {
+    const g = (r.genero||'').trim();
+    const rc = (r.raca_cor||'').trim();
+    if (!g && !rc) return;
+    const key = g && rc ? `${g} - ${rc}` : g || rc;
+    comboMap[key] = (comboMap[key]||0) + 1;
+  });
+  const comboEntries = Object.entries(comboMap).sort((a,b)=>b[1]-a[1]);
+
+  const ctxGR = document.getElementById('ch-d2-genraca').getContext('2d');
+  charts2.genraca = new Chart(ctxGR, {
+    type: 'bar',
+    data: {
+      labels: comboEntries.map(e=>e[0]),
+      datasets: [{
+        data: comboEntries.map(e=>e[1]),
+        backgroundColor: comboEntries.map((_,i) => COMBO_COLORS[i % COMBO_COLORS.length]),
+        borderRadius: 4, barThickness: 16
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 32 } },
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: { label: c => ` ${c.raw} pessoas` }},
+        datalabels: { ...DL_BASE, anchor: 'end', align: 'end', formatter: v => v }
+      },
+      scales: darkScales(true)
+    }
+  });
+
+  /* ── DIVERSIDADE POR DEPARTAMENTO (barras empilhadas 100%) ── */
+  const depts = [...new Set(data.map(r=>r.departamento).filter(Boolean))].sort();
+  const combos = [...new Set(data.map(r => {
+    const g = (r.genero||'').trim(); const rc = (r.raca_cor||'').trim();
+    return g && rc ? `${g} - ${rc}` : g || rc || null;
+  }).filter(Boolean))];
+
+  const stacked = combos.map((combo, i) => {
+    const vals = depts.map(dept => {
+      const sub = data.filter(r => r.departamento === dept);
+      const cnt = sub.filter(r => {
+        const g = (r.genero||'').trim(); const rc = (r.raca_cor||'').trim();
+        const k = g && rc ? `${g} - ${rc}` : g || rc || '';
+        return k === combo;
+      }).length;
+      const tot = sub.length;
+      return tot ? parseFloat((cnt/tot*100).toFixed(1)) : 0;
+    });
+    return {
+      label: combo,
+      data: vals,
+      backgroundColor: COMBO_COLORS[i % COMBO_COLORS.length],
+      borderWidth: 0
+    };
+  });
+
+  const ctxDD = document.getElementById('ch-d2-divdept').getContext('2d');
+  charts2.divdept = new Chart(ctxDD, {
+    type: 'bar',
+    data: { labels: depts, datasets: stacked },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'right', labels: { color: '#aaaacc', font: { size: 9 }, boxWidth: 10, padding: 5 }},
+        tooltip: { ...chartDefaults.plugins.tooltip, callbacks: {
+          label: c => ` ${c.dataset.label}: ${c.raw}%`
+        }},
+        datalabels: { display: false }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#aaaacc', font: { size: 10 } }, grid: { display: false }, border: { color: 'transparent' } },
+        y: { stacked: true, min: 0, max: 100, ticks: { color: '#aaaacc', font: { size: 10 }, callback: v => v+'%' }, grid: { color: 'rgba(42,42,74,0.6)' }, border: { color: 'transparent' } }
+      }
+    }
+  });
+
+  /* ── KPI CARDS ── */
+  const totalContrat = data.length;
+  const comDeclaracao = data.filter(r =>
+    (r.genero||'').trim() !== '' ||
+    (r.raca_cor||'').trim() !== '' ||
+    (r.orientacao_sexual||'').trim() !== ''
+  ).length;
+  const txDeclaracao  = totalContrat ? (comDeclaracao/totalContrat*100).toFixed(2) : '0.00';
+
+  const mulheres = data.filter(r => ['Feminino','Mulher Cis'].includes((r.genero||'').trim())).length;
+  const txMulher = totalContrat ? (mulheres/totalContrat*100).toFixed(2) : '0.00';
+
+  const comRaca      = data.filter(r => (r.raca_cor||'').trim() !== '').length;
+  const negrosPardos = data.filter(r => ['Negra','Parda'].includes((r.raca_cor||'').trim())).length;
+  const txNP         = comRaca ? (negrosPardos/comRaca*100).toFixed(2) : '0.00';
+
+  const comOrient  = data.filter(r => (r.orientacao_sexual||'').trim() !== '').length;
+  const lgbtqia    = data.filter(r => (r.orientacao_sexual||'').trim() !== '' && (r.orientacao_sexual||'').trim() !== 'Heterossexual').length;
+  const txLGBT     = comOrient ? (lgbtqia/comOrient*100).toFixed(2) : '0.00';
+
+  document.getElementById('kpi2').innerHTML = `
+    ${kpiCard2('TAXA DE DECLARAÇÃO',   txDeclaracao+'%', `${comDeclaracao} de ${totalContrat} informaram dados`)}
+    ${kpiCard2('TAXA DE MULHERES',     txMulher+'%',     `${mulheres} de ${totalContrat} contratações femininas`)}
+    ${kpiCard2('TAXA DE NEGROS E PARDOS', txNP+'%',      `${negrosPardos} de ${comRaca} raças declaradas`)}
+    ${kpiCard2('TAXA DE LGBTQIA+',     txLGBT+'%',       `${lgbtqia} de ${comOrient} orientações declaradas`)}
+  `;
+}
+
+function kpiCard2(label, value, sub) {
+  return `<div class="kpi-card" style="border-top:2px solid var(--primary);padding-top:20px">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-value" style="font-size:32px;color:var(--primary)">${value}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+
+function onFilterChange() { renderActiveTab(); }
+
+/* ── INIT ── */
+async function init() {
+  try {
+    await loadAll();
+
+    populateGlobalFilters();
+    populateSubFilters('tab1');
+
+    document.querySelectorAll('.filter-select').forEach(s => s.addEventListener('change', onFilterChange));
+    document.querySelectorAll('.filter-reset').forEach(b => b.addEventListener('click', () => {
+      document.getElementById(b.dataset.target).value = '';
+      onFilterChange();
+    }));
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+    renderTab1();
+    updateTimestamp();
+    populateCompFilters();
+
+    document.getElementById('loading-overlay').style.display = 'none';
+
+    setInterval(async () => {
+      await loadAll();
+      populateGlobalFilters();
+      renderActiveTab();
+      updateTimestamp();
+    }, 5 * 60 * 1000);
+
+  } catch(e) {
+    document.getElementById('loading-overlay').style.display = 'none';
+    const err = document.getElementById('error-msg');
+    err.style.display = 'block';
+    err.textContent = `Erro ao carregar dados: ${e.message || e}`;
+  }
+}
+
+function updateTimestamp() {
+  const now = new Date();
+  document.getElementById('last-update').textContent =
+    `Atualizado: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+init();
+
+/* ── TAB COMPARATIVO — RH ── */
+let chartsComp = {};
+
+function populateCompFilters() {
+  const anos = [...new Set(DB.fVagas.map(r => r.ano).filter(Boolean))].sort((a,b) => b - a);
+  const mesMap = new Map();
+  DB.fVagas.forEach(r => {
+    if (!r.data_abertura) return;
+    const d = new Date(r.data_abertura); if (isNaN(d)) return;
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!mesMap.has(k)) mesMap.set(k, { k, label: `${MONTHS_PT[d.getMonth()]} ${d.getFullYear()}`, ts: d.getTime() });
+  });
+  const meses = [...mesMap.values()].sort((a,b) => b.ts - a.ts);
+  ['cmp-a-ano','cmp-b-ano'].forEach(id => {
+    const el = document.getElementById(id);
+    while (el.options.length > 1) el.remove(1);
+    anos.forEach(a => el.appendChild(new Option(a, a)));
+  });
+  ['cmp-a-mes','cmp-b-mes'].forEach(id => {
+    const el = document.getElementById(id);
+    while (el.options.length > 1) el.remove(1);
+    meses.forEach(m => el.appendChild(new Option(m.label, m.key)));
+  });
+  if (anos.length >= 1) document.getElementById('cmp-a-ano').value = anos[0];
+  if (anos.length >= 2) document.getElementById('cmp-b-ano').value = anos[1];
+  ['cmp-a-ano','cmp-a-mes','cmp-b-ano','cmp-b-mes'].forEach(id =>
+    document.getElementById(id).addEventListener('change', renderTabComp)
+  );
+}
+
+function _fVC(ano, mes) {
+  return DB.fVagas.filter(r => {
+    if (ano && String(r.ano) !== String(ano)) return false;
+    if (mes && r.data_abertura) {
+      const d = new Date(r.data_abertura); if (!isNaN(d)) {
+        if (`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` !== mes) return false;
+      }
+    }
+    return true;
+  });
+}
+function _fOC(ano, mes) {
+  return (DB.fOffboarding||[]).filter(r => {
+    if (!r.data_desligamento) return false;
+    const d = new Date(r.data_desligamento); if (isNaN(d)) return false;
+    if (ano && String(d.getFullYear()) !== String(ano)) return false;
+    if (mes && `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` !== mes) return false;
+    return true;
+  });
+}
+function _fTC(ano, mes) {
+  return (DB.fTurnover||[]).filter(r => {
+    if (ano && String(r.ano) !== String(ano)) return false;
+    if (mes && r.mes_referencia) {
+      const d = new Date(r.mes_referencia); if (!isNaN(d)) {
+        if (`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` !== mes) return false;
+      }
+    }
+    return true;
+  });
+}
+
+function _pLbl(anoId, mesId) {
+  const ano = document.getElementById(anoId).value;
+  const mes = document.getElementById(mesId).value;
+  if (!ano && !mes) return 'Todos os períodos';
+  if (mes) { const el = document.getElementById(mesId); return el.options[el.selectedIndex]?.textContent || mes; }
+  return `Ano ${ano}`;
+}
+
+function _delta(a, b, hb) {
+  if (a === 0 && b === 0) return '<span class="cmp-delta cmp-delta-flat">≈</span>';
+  if (b === 0) return '<span class="cmp-delta cmp-delta-flat">N/D</span>';
+  const p = (a - b) / Math.abs(b) * 100;
+  const ok = hb ? p > 0.5 : p < -0.5;
+  const bad = hb ? p < -0.5 : p > 0.5;
+  const cls = ok ? 'cmp-delta-up' : bad ? 'cmp-delta-down' : 'cmp-delta-flat';
+  return `<span class="cmp-delta ${cls}">${p > 0 ? '+' : ''}${p.toFixed(1)}%</span>`;
+}
+
+function _cmpCard(label, a, b, fmt, hb) {
+  return `<div class="cmp-kpi-card"><div class="cmp-kpi-label">${label}</div>
+    <div class="cmp-row">
+      <span class="cmp-val cmp-val-a">${fmt(a)}</span>${_delta(a,b,hb)}<span class="cmp-val cmp-val-b">${fmt(b)}</span>
+    </div></div>`;
+}
+
+function renderTabComp() {
+  const aaA = document.getElementById('cmp-a-ano').value;
+  const amA = document.getElementById('cmp-a-mes').value;
+  const aaB = document.getElementById('cmp-b-ano').value;
+  const amB = document.getElementById('cmp-b-mes').value;
+  const lA = _pLbl('cmp-a-ano','cmp-a-mes');
+  const lB = _pLbl('cmp-b-ano','cmp-b-mes');
+  document.getElementById('cmp-lbl-a').textContent = `A — ${lA}`;
+  document.getElementById('cmp-lbl-b').textContent = `B — ${lB}`;
+
+  const vA = _fVC(aaA, amA), vB = _fVC(aaB, amB);
+  const oA = _fOC(aaA, amA), oB = _fOC(aaB, amB);
+  const tA = _fTC(aaA, amA), tB = _fTC(aaB, amB);
+
+  const fA = vA.filter(r => parseBool(r.vaga_fechada));
+  const fB = vB.filter(r => parseBool(r.vaga_fechada));
+  const slaA = fA.length ? fA.reduce((s,r)=>s+toFloat(r.sla_dias),0)/fA.length : 0;
+  const slaB = fB.length ? fB.reduce((s,r)=>s+toFloat(r.sla_dias),0)/fB.length : 0;
+  const tvhA = tA.reduce((s,r)=>s+toFloat(r.total_pessoal),0);
+  const tvhB = tB.reduce((s,r)=>s+toFloat(r.total_pessoal),0);
+  const txA = tvhA > 0 ? tA.reduce((s,r)=>s+toFloat(r.demitidos),0)/tvhA*100 : 0;
+  const txB = tvhB > 0 ? tB.reduce((s,r)=>s+toFloat(r.demitidos),0)/tvhB*100 : 0;
+
+  document.getElementById('cmp-kpis').innerHTML =
+    _cmpCard('VAGAS ABERTAS',   vA.length,  vB.length,  v=>v,              true)  +
+    _cmpCard('SLA MÉDIO (dias)',slaA,        slaB,        v=>v.toFixed(1),  false) +
+    _cmpCard('CONCLUÍDAS', vA.filter(r=>r.situacao_atual==='Concluído').length,
+                           vB.filter(r=>r.situacao_atual==='Concluído').length, v=>v, true) +
+    _cmpCard('DESLIGAMENTOS',   oA.length,  oB.length,  v=>v,              false) +
+    _cmpCard('TURNOVER %',      txA,        txB,        v=>v.toFixed(1)+'%',false);
+
+  Object.values(chartsComp).forEach(c=>c.destroy()); chartsComp={};
+  const CA='rgba(233,30,140,0.82)', CB='rgba(0,188,212,0.82)';
+
+  function bC(id, labels, dA, dB, horiz) {
+    return new Chart(document.getElementById(id).getContext('2d'), {
+      type:'bar',
+      data:{labels, datasets:[
+        {label:lA,data:dA,backgroundColor:CA,borderRadius:4},
+        {label:lB,data:dB,backgroundColor:CB,borderRadius:4}
+      ]},
+      options:{
+        indexAxis:horiz?'y':'x', responsive:true, maintainAspectRatio:false,
+        layout:{padding:{[horiz?'right':'top']:24}},
+        plugins:{
+          legend:{display:true,labels:{color:'#aaaacc',font:{size:11},boxWidth:12}},
+          datalabels:{...DL_BASE,anchor:'end',align:'end',font:{size:10},formatter:v=>v||''},
+          tooltip:{...chartDefaults.plugins.tooltip}
+        },
+        scales:darkScales(horiz)
+      }
+    });
+  }
+
+  const dA={},dB={};
+  vA.forEach(r=>{if(r.departamento)dA[r.departamento]=(dA[r.departamento]||0)+1;});
+  vB.forEach(r=>{if(r.departamento)dB[r.departamento]=(dB[r.departamento]||0)+1;});
+  const deps=[...new Set([...Object.keys(dA),...Object.keys(dB)])].sort((a,b)=>((dA[b]||0)+(dB[b]||0))-((dA[a]||0)+(dB[a]||0)));
+  chartsComp.dept = bC('cmp-ch-dept', deps, deps.map(d=>dA[d]||0), deps.map(d=>dB[d]||0), true);
+
+  const cA={},cB_={};
+  vA.forEach(r=>{if(r.canal_atracao)cA[r.canal_atracao]=(cA[r.canal_atracao]||0)+1;});
+  vB.forEach(r=>{if(r.canal_atracao)cB_[r.canal_atracao]=(cB_[r.canal_atracao]||0)+1;});
+  const cans=[...new Set([...Object.keys(cA),...Object.keys(cB_)])].sort((a,b)=>((cA[b]||0)+(cB_[b]||0))-((cA[a]||0)+(cB_[a]||0)));
+  chartsComp.canal = bC('cmp-ch-canal', cans, cans.map(c=>cA[c]||0), cans.map(c=>cB_[c]||0), true);
+
+  const tipos=['Voluntário','Involuntário'];
+  chartsComp.deslig = bC('cmp-ch-deslig', tipos,
+    tipos.map(t=>oA.filter(r=>r.motivo_desligamento===t).length),
+    tipos.map(t=>oB.filter(r=>r.motivo_desligamento===t).length), false);
+
+  function divPct(data,field,vals){
+    const base=data.filter(r=>r.nome_contratado&&r.nome_contratado.trim()!=='');
+    return base.length?parseFloat((base.filter(r=>vals.includes((r[field]||'').trim())).length/base.length*100).toFixed(1)):0;
+  }
+  function lgbtP(data){
+    const base=data.filter(r=>r.nome_contratado&&r.nome_contratado.trim()!==''&&(r.orientacao_sexual||'').trim()!=='');
+    return base.length?parseFloat((base.filter(r=>(r.orientacao_sexual||'').trim()!=='Heterossexual').length/base.length*100).toFixed(1)):0;
+  }
+  const divL=['% Mulheres','% Negros/Pardos','% LGBTQIA+'];
+  const dvA=[divPct(vA,'genero',['Feminino','Mulher Cis']),divPct(vA,'raca_cor',['Negra','Parda']),lgbtP(vA)];
+  const dvB=[divPct(vB,'genero',['Feminino','Mulher Cis']),divPct(vB,'raca_cor',['Negra','Parda']),lgbtP(vB)];
+  chartsComp.div = new Chart(document.getElementById('cmp-ch-div').getContext('2d'),{
+    type:'bar',
+    data:{labels:divL,datasets:[
+      {label:lA,data:dvA,backgroundColor:CA,borderRadius:4},
+      {label:lB,data:dvB,backgroundColor:CB,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+      plugins:{
+        legend:{display:true,labels:{color:'#aaaacc',font:{size:11},boxWidth:12}},
+        datalabels:{...DL_BASE,anchor:'end',align:'end',font:{size:10},formatter:v=>v+'%'},
+        tooltip:{...chartDefaults.plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}%`}}
+      },
+      scales:{...darkScales(false),y:{ticks:{color:'#aaaacc',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(42,42,74,0.6)'},border:{color:'transparent'}}}}
+  });
+}
+</script>
+</body>
+</html>

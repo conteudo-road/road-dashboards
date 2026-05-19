@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road — Comercial</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root {
+  --bg: #0d0d1a;
+  --card: #1a1a2e;
+  --border: #2a2a4a;
+  --primary: #e91e8c;
+  --secondary: #9c27b0;
+  --cyan: #00bcd4;
+  --red: #ff5252;
+  --orange: #ffab40;
+  --green: #69f0ae;
+  --text: #ffffff;
+  --text2: #aaaacc;
+  --header-h: 60px;
+  --subbar-h: 48px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  font-size: 14px;
+}
+#header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #12122b;
+  border-bottom: 1px solid var(--border);
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+}
+#logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#logo-text {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700; font-size: 20px;
+  color: #fff; letter-spacing: -1px;
+}
+#header-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+#header-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+#last-update {
+  font-size: 11px;
+  color: var(--text2);
+  font-family: 'Space Mono', monospace;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.filter-wrap { display: flex; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.filter-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--primary); padding: 0 8px; white-space: nowrap; background: rgba(233,30,140,0.1); height: 32px; display: flex; align-items: center; border-right: 1px solid var(--border); text-transform: uppercase; }
+.filter-select { background: transparent; border: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 0 8px; height: 32px; outline: none; cursor: pointer; min-width: 110px; }
+.filter-select option { background: #1a1a2e; }
+.filter-reset { background: none; border: none; color: var(--text2); cursor: pointer; padding: 0 6px; height: 32px; font-size: 14px; transition: color .2s; }
+.filter-reset:hover { color: var(--red); }
+#nav { background: #12122b; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; }
+.tab-btn { background: none; border: none; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 14px 20px 12px; cursor: pointer; letter-spacing: 0.5px; border-bottom: 2px solid transparent; text-transform: uppercase; transition: color .2s, border-color .2s; }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+#subbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: var(--subbar-h);
+}
+#subbar .filter-label { font-size: 9px; }
+#main { padding: 24px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.section-eyebrow { font-size: 11px; font-weight: 600; color: var(--text2); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+.section-eyebrow span { color: var(--primary); }
+.section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.section-title em { font-style: normal; color: var(--primary); }
+.kpi-row { display: grid; gap: 12px; margin-bottom: 20px; }
+.kpi-row.cols-5 { grid-template-columns: repeat(5,1fr); }
+.kpi-row.cols-4 { grid-template-columns: repeat(4,1fr); }
+.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+.kpi-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+.kpi-value { font-family: 'Space Mono', monospace; font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+.kpi-sub { font-size: 12px; color: var(--text2); }
+.chart-row { display: grid; gap: 16px; margin-bottom: 16px; }
+.chart-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.chart-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.chart-row.cols-60-40 { grid-template-columns: 3fr 2fr; }
+.chart-row.cols-40-60 { grid-template-columns: 2fr 3fr; }
+.chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+.chart-card-header { margin-bottom: 14px; }
+.chart-tag { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: var(--primary); text-transform: uppercase; margin-bottom: 3px; border: 1px solid rgba(233,30,140,0.3); display: inline-block; padding: 2px 6px; border-radius: 3px; }
+.chart-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.chart-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.chart-insight { font-size: 11px; color: var(--cyan); margin-top: 10px; padding: 8px 10px; background: rgba(0,188,212,0.07); border-radius: 6px; border-left: 2px solid var(--cyan); }
+.rank-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rank-table tr { border-bottom: 1px solid rgba(42,42,74,0.4); transition: background .15s; }
+.rank-table tr:hover { background: rgba(233,30,140,0.05); }
+.rank-table td { padding: 8px 10px; vertical-align: middle; }
+.rank-num { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text2); width: 24px; text-align: right; }
+.rank-name { color: var(--text); font-weight: 500; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-bar-wrap { width: 120px; background: rgba(255,255,255,0.06); border-radius: 3px; height: 6px; overflow: hidden; }
+.rank-bar-fill { height: 100%; border-radius: 3px; background: var(--primary); }
+.rank-val { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text); text-align: right; white-space: nowrap; }
+.rank-pct { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text2); text-align: right; white-space: nowrap; min-width: 44px; }
+.chart-container { position: relative; width: 100%; }
+.table-wrap { overflow-x: auto; max-height: 360px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { background: #0d0d1a; color: var(--text2); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 10px 14px; text-align: left; position: sticky; top: 0; border-bottom: 1px solid var(--border); }
+tbody tr { border-bottom: 1px solid rgba(42,42,74,0.5); transition: background .15s; }
+tbody tr:hover { background: rgba(233,30,140,0.05); }
+tbody td { padding: 9px 14px; color: var(--text); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+.badge-green { background: rgba(105,240,174,0.15); color: var(--green); }
+.badge-purple { background: rgba(156,39,176,0.15); color: var(--secondary); }
+.badge-cyan { background: rgba(0,188,212,0.15); color: var(--cyan); }
+.badge-red { background: rgba(255,82,82,0.15); color: var(--red); }
+.badge-orange { background: rgba(255,171,64,0.15); color: var(--orange); }
+.pipeline-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(42,42,74,0.4); }
+.pipeline-label { width: 180px; font-size: 12px; color: var(--text); flex-shrink: 0; }
+.pipeline-bar-wrap { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 14px; overflow: hidden; }
+.pipeline-bar { height: 100%; border-radius: 4px; transition: width .4s; }
+.pipeline-val { width: 60px; text-align: right; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text2); flex-shrink: 0; }
+#loading-overlay { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 16px; }
+.spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-overlay p { color: var(--text2); font-size: 14px; }
+#error-msg { display: none; background: rgba(255,82,82,0.1); border: 1px solid var(--red); border-radius: 8px; padding: 12px 20px; color: var(--red); margin: 20px 24px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+@media(max-width:900px) {
+  .kpi-row.cols-5, .kpi-row.cols-4 { grid-template-columns: repeat(2,1fr); }
+  .chart-row.cols-2, .chart-row.cols-3, .chart-row.cols-60-40, .chart-row.cols-40-60 { grid-template-columns: 1fr; }
+}
+
+/* ── COMPARISON TAB ── */
+.cmp-controls{display:flex;align-items:center;gap:12px;padding:16px 0 24px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:24px}
+.cmp-period-badge{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;border-radius:4px;white-space:nowrap;font-family:'Space Mono',monospace}
+.badge-a{background:rgba(233,30,140,0.15);color:var(--primary);border:1px solid rgba(233,30,140,0.3)}
+.badge-b{background:rgba(0,188,212,0.15);color:var(--cyan);border:1px solid rgba(0,188,212,0.3)}
+.cmp-vs{font-family:'Space Mono',monospace;font-weight:700;color:var(--text2);font-size:18px;padding:0 6px}
+.cmp-kpi-grid{display:grid;gap:12px;margin-bottom:24px}
+.cmp-kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.cmp-kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),var(--cyan))}
+.cmp-kpi-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--text2);text-transform:uppercase;margin-bottom:10px}
+.cmp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cmp-val{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;flex:1;min-width:0}
+.cmp-val-a{color:var(--primary)}
+.cmp-val-b{color:var(--cyan)}
+.cmp-delta{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.cmp-delta-up{background:rgba(105,240,174,0.15);color:var(--green)}
+.cmp-delta-down{background:rgba(255,82,82,0.15);color:var(--red)}
+.cmp-delta-flat{background:rgba(170,170,204,0.12);color:var(--text2)}
+.cmp-chart-row{display:grid;gap:16px;margin-bottom:16px}
+.cmp-chart-row.cols-2{grid-template-columns:1fr 1fr}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay"><div class="spinner"></div><p>Carregando dados…</p></div>
+<div id="error-msg"></div>
+
+<header id="header">
+  <div id="logo">
+    <span id="logo-text">Road</span>
+  </div>
+  <span id="header-title">COMERCIAL</span>
+
+  <div id="header-filters">
+    <div class="filter-wrap">
+      <span class="filter-label">ANO</span>
+      <select class="filter-select" id="f-ano"><option value="">Todos</option></select>
+      <button class="filter-reset" data-target="f-ano" title="Limpar">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">MÊS</span>
+      <select class="filter-select" id="f-mes"><option value="">Todos</option></select>
+      <button class="filter-reset" data-target="f-mes" title="Limpar">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">SERVIÇO</span>
+      <select class="filter-select" id="f-servico"><option value="">Todos</option></select>
+      <button class="filter-reset" data-target="f-servico" title="Limpar">×</button>
+    </div>
+    <span id="last-update">—</span>
+  </div>
+</header>
+
+<nav id="nav">
+  <button class="tab-btn active" data-tab="tab1">Receita Recorrente</button>
+  <button class="tab-btn" data-tab="tab2">Vendas &amp; Pipeline</button>
+  <button class="tab-btn" data-tab="tab3">Análise por Cliente</button>
+  <button class="tab-btn" data-tab="tab4">Margem &amp; Faturamento</button>
+  <button class="tab-btn" data-tab="tabComp">Comparativo</button>
+</nav>
+
+<div id="subbar"></div>
+
+<main id="main">
+
+  <!-- ABA 1 -->
+  <div class="tab-panel active" id="tab1">
+    <p class="section-eyebrow">// <span>RECORRÊNCIA</span> — New Monthly Recurring Revenue</p>
+    <h2 class="section-title">Receita <em>Recorrente</em></h2>
+    <div class="kpi-row cols-5" id="kpi1"></div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">New MRR por Fonte</div><div class="chart-title">Receita nova por canal de origem</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch1-fonte"></canvas></div>
+        <div class="chart-insight" id="ins1-fonte" style="display:none"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Distribuição por Serviço</div><div class="chart-title">Participação de cada serviço no MRR</div></div>
+        <div id="tbl-ch1-servico" style="max-height:260px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">New MRR vs Churn MRR</div><div class="chart-title">Evolução da base de receita recorrente</div><div class="chart-sub">por mês de entrada</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch1-mrr-mes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Clientes Novos por Fonte</div><div class="chart-title">Distribuição de novos contratos por canal</div></div>
+        <div id="tbl-ch1-novos-fonte" style="max-height:260px;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 2 -->
+  <div class="tab-panel" id="tab2">
+    <p class="section-eyebrow">// <span>NEGOCIAÇÕES</span> — Pipeline Comercial Ativo</p>
+    <h2 class="section-title">Vendas <em>&amp; Pipeline</em></h2>
+    <div class="kpi-row cols-5" id="kpi2"></div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Divisão por Tipos de Venda</div><div class="chart-title">Vendas empilhadas por mês</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch2-stack-mes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Total das Vendas por Serviço</div><div class="chart-title">Receita acumulada por tipo de serviço</div></div>
+        <div id="tbl-ch2-servico" style="max-height:260px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Clientes em Negociação</div><div class="chart-title">Pipeline ativo de propostas</div></div>
+        <div class="table-wrap" style="max-height:320px"><table>
+          <thead><tr><th>Cliente</th><th>Fonte</th><th>Serviço</th><th>Status</th><th>Tipo</th><th>Registro</th></tr></thead>
+          <tbody id="tbl2"></tbody>
+        </table></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Pipeline de Propostas</div><div class="chart-title">Volume por estágio do funil</div></div>
+        <div id="pipeline-bars" style="padding:8px 0"></div>
+        <div id="pipeline-conversao" class="chart-insight" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 3 -->
+  <div class="tab-panel" id="tab3">
+    <p class="section-eyebrow">// <span>CLIENTES</span> — Análise de Cliente e Segmento</p>
+    <h2 class="section-title">Análise por <em>Cliente</em></h2>
+    <div class="kpi-row cols-5" id="kpi3"></div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Top Clientes por Receita</div><div class="chart-title">Clientes com maior volume de vendas</div></div>
+        <div id="tbl-ch3-clientes" style="max-height:300px;overflow-y:auto"></div>
+        <div class="chart-insight" id="ins3-clientes" style="display:none"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Propostas por Status</div><div class="chart-title">Distribuição das negociações por estágio</div></div>
+        <div class="chart-container" style="height:300px"><canvas id="ch3-status"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Clientes em Negociação</div><div class="chart-title">Pipeline ativo de propostas</div></div>
+        <div class="table-wrap" style="max-height:320px"><table>
+          <thead><tr><th>Cliente</th><th>Fonte</th><th>Serviço</th><th>Status</th><th>Tipo</th><th>Registro</th></tr></thead>
+          <tbody id="tbl3"></tbody>
+        </table></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Propostas por Tipo de Registro</div><div class="chart-title">Prospect vs Cliente Interno por status</div></div>
+        <div class="chart-container" style="height:300px"><canvas id="ch3-registro"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA 4 -->
+  <div class="tab-panel" id="tab4">
+    <p class="section-eyebrow">// <span>FINANCEIRO</span> — Margem e Faturamento</p>
+    <h2 class="section-title">Margem <em>&amp; Faturamento</em></h2>
+    <div class="kpi-row cols-4" id="kpi4"></div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Faturamento vs Valor a Receber</div><div class="chart-title">Evolução mensal do faturamento</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch4-fat-mes"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Status de Pagamento</div><div class="chart-title">Distribuição por situação financeira</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch4-status-pgto"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Top Clientes por Receita Faturada</div><div class="chart-title">Maior volume de notas fiscais emitidas</div></div>
+        <div id="tbl-ch4-clientes-fat" style="max-height:300px;overflow-y:auto"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Margem % por Cliente</div><div class="chart-title">Lucratividade — vermelho &lt;20% · laranja 20–40% · verde &gt;40%</div></div>
+        <div id="tbl-ch4-margem-cliente" style="max-height:300px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="chart-row cols-2">
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Custo vs Lucro</div><div class="chart-title">Composição mensal da margem</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch4-custo-lucro"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header"><div class="chart-tag">Margem Média por Núcleo</div><div class="chart-title">Lucratividade por área de negócio</div></div>
+        <div class="chart-container" style="height:260px"><canvas id="ch4-nucleo"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+<!-- ABA COMPARATIVO -->
+<div class="tab-panel" id="tabComp">
+  <p class="section-eyebrow">// <span>HISTÓRICO</span> — Comparação entre Períodos</p>
+  <h2 class="section-title">Análise <em>Comparativa</em></h2>
+
+  <div class="cmp-controls">
+    <span class="cmp-period-badge badge-a" id="cmp-lbl-a">A — Período A</span>
+    <div class="filter-wrap">
+      <span class="filter-label">ANO</span>
+      <select class="filter-select" id="cmp-a-ano"><option value="">Todos</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-a-ano').value='';renderTabComp()">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">MÊS</span>
+      <select class="filter-select" id="cmp-a-mes"><option value="">Ano todo</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-a-mes').value='';renderTabComp()">×</button>
+    </div>
+    <span class="cmp-vs">VS</span>
+    <span class="cmp-period-badge badge-b" id="cmp-lbl-b">B — Período B</span>
+    <div class="filter-wrap">
+      <span class="filter-label">ANO</span>
+      <select class="filter-select" id="cmp-b-ano"><option value="">Todos</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-b-ano').value='';renderTabComp()">×</button>
+    </div>
+    <div class="filter-wrap">
+      <span class="filter-label">MÊS</span>
+      <select class="filter-select" id="cmp-b-mes"><option value="">Ano todo</option></select>
+      <button class="filter-reset" onclick="document.getElementById('cmp-b-mes').value='';renderTabComp()">×</button>
+    </div>
+  </div>
+  <div class="cmp-kpi-grid" id="cmp-kpis" style="grid-template-columns:repeat(5,1fr)"></div>
+
+  <div class="cmp-chart-row cols-2">
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">New MRR por Fonte</div><div class="chart-title">Origem da receita recorrente</div></div>
+      <div class="chart-container" style="height:280px"><canvas id="cmp-ch-fonte"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Vendas por Tipo</div><div class="chart-title">Composição das vendas</div></div>
+      <div class="chart-container" style="height:280px"><canvas id="cmp-ch-tipo"></canvas></div>
+    </div>
+  </div>
+  <div class="cmp-chart-row cols-2">
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Mix de Serviços — MRR</div><div class="chart-title">Receita recorrente por serviço</div></div>
+      <div class="chart-container" style="height:260px"><canvas id="cmp-ch-srv"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header"><div class="chart-tag">Margem por Cliente — Top 10</div><div class="chart-title">Lucratividade comparada</div></div>
+      <div class="chart-container" style="height:260px"><canvas id="cmp-ch-margem"></canvas></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const URLS = {
+  fNMRR:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwEh-5Q6ilNQxMVx7N6TxxzvtuP2taoGlSM_tHTYHLN_d9jDPeF94nAEpqGxLxX8LFu6k_iaKG2emP/pub?gid=1555864342&single=true&output=csv',
+  fVendas:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwEh-5Q6ilNQxMVx7N6TxxzvtuP2taoGlSM_tHTYHLN_d9jDPeF94nAEpqGxLxX8LFu6k_iaKG2emP/pub?gid=1041955650&single=true&output=csv',
+  fNegociacao: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTwEh-5Q6ilNQxMVx7N6TxxzvtuP2taoGlSM_tHTYHLN_d9jDPeF94nAEpqGxLxX8LFu6k_iaKG2emP/pub?gid=819037879&single=true&output=csv',
+  fFaturamento:'https://docs.google.com/spreadsheets/d/e/2PACX-1vQfUY8W6vSDgs4-CdIlqJltWVFtGWmymmPefiNkslNxn_idGB7MS2540zXM-pRXGOYGCFP9zpQcugXF/pub?gid=311962151&single=true&output=csv',
+  dClientes:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQfUY8W6vSDgs4-CdIlqJltWVFtGWmymmPefiNkslNxn_idGB7MS2540zXM-pRXGOYGCFP9zpQcugXF/pub?gid=621603384&single=true&output=csv',
+  fMargem:     'https://docs.google.com/spreadsheets/d/e/2PACX-1vRyLLM_qRQBU45f9U67WKfVwuqfaHnpp2NX6D_DXQk8l12TwKMSM4RhPbosGylZuargPxuzHggKaUC_/pub?gid=2082601059&single=true&output=csv',
+  dNucleos:    'https://docs.google.com/spreadsheets/d/e/2PACX-1vRyLLM_qRQBU45f9U67WKfVwuqfaHnpp2NX6D_DXQk8l12TwKMSM4RhPbosGylZuargPxuzHggKaUC_/pub?gid=990142745&single=true&output=csv'
+};
+
+const DB = {};
+let activeTab = 'tab1';
+let charts1={}, charts2={}, charts3={}, charts4={};
+
+const COLORS = ['#e91e8c','#00e5ff','#76ff03','#ff6d00','#7c4dff','#ffea00','#00bfa5','#ff1744','#64dd17','#aa00ff','#ff6f00','#0091ea'];
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+Chart.register(ChartDataLabels);
+const DL = {color:'#fff',font:{family:"'DM Sans',sans-serif",size:10,weight:'600'},clip:false};
+const TT = {backgroundColor:'#1a1a2e',borderColor:'#2a2a4a',borderWidth:1,titleColor:'#ffffff',bodyColor:'#aaaacc',padding:10};
+
+function sX(){return{ticks:{color:'#aaaacc',font:{size:10}},grid:{display:false},border:{color:'transparent'}};}
+function sXg(){return{ticks:{color:'#aaaacc',font:{size:10}},grid:{color:'rgba(42,42,74,0.8)'},border:{color:'transparent'}};}
+function sY(){return{ticks:{color:'#aaaacc',font:{size:10}},grid:{color:'rgba(42,42,74,0.8)'},border:{color:'transparent'}};}
+function sYbrl(){return{...sY(),ticks:{color:'#aaaacc',font:{size:10},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}};}
+function sYpct(){return{...sY(),ticks:{color:'#aaaacc',font:{size:10},callback:v=>v+'%'}};}
+
+// FIX 5: toFloat robusto — suporta "1.234,56" (BR) e "1234.56" (EN) e "45%" e "0,45"
+function toFloat(v){
+  if(v==null||v==='') return 0;
+  const s=String(v).trim().replace('%','');
+  // BR format: tem vírgula como decimal
+  if(/\d+\.\d{3},/.test(s)||(/,/.test(s)&&!/\./.test(s))){
+    return parseFloat(s.replace(/\./g,'').replace(',','.'))||0;
+  }
+  return parseFloat(s.replace(',','.'))||0;
+}
+
+// FIX 2: pct_lucro — detecta se vem como decimal (0-1) ou percentual (0-100)
+function toPct(v){
+  const f=toFloat(v);
+  // se o valor absoluto é ≤1 e não é zero, provavelmente é fração (0.45 = 45%)
+  if(f!==0&&Math.abs(f)<=1) return f*100;
+  return f;
+}
+
+function fmtBRL(v){return 'R$ '+Math.round(v).toLocaleString('pt-BR');}
+function fmtPct(v){return v.toFixed(1)+'%';}
+function gv(id){const el=document.getElementById(id);return el?el.value:'';}
+function uniq(arr,f){return[...new Set(arr.map(r=>(r[f]||'').trim()).filter(Boolean))].sort();}
+
+/* ── DATE NORMALIZER ──────────────────────────────────────────────
+   Converte QUALQUER formato de data para ISO YYYY-MM-DD (string).
+   Executado UMA vez no loadAll → zero overhead em filtros e charts.
+   Formatos: YYYY-MM-DD, DD/MM/YYYY, MM/YYYY, YYYY-MM,
+             "Fevereiro 2026", "fev/2026", "março de 2025", serial Excel.
+─────────────────────────────────────────────────────────────────── */
+const DATE_FIELDS_NORM = [
+  'mes_referencia','mes_entrada','mes_servico','data_competencia',
+  'data_referencia','data_lancamento','data_pagamento','data_abertura',
+  'data_fechamento','data_emissao','data'
+];
+
+const MES_MAP_NORM = {
+  'janeiro':1,'fevereiro':2,'marco':3,'abril':4,'maio':5,'junho':6,
+  'julho':7,'agosto':8,'setembro':9,'outubro':10,'novembro':11,'dezembro':12,
+  'jan':1,'fev':2,'mar':3,'abr':4,'mai':5,'jun':6,
+  'jul':7,'ago':8,'set':9,'out':10,'nov':11,'dez':12
+};
+
+function normalizeDate(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}[T ]/.test(s)) return s.slice(0, 10);
+  const mDMY = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mDMY) return `${mDMY[3]}-${mDMY[2].padStart(2,'0')}-${mDMY[1].padStart(2,'0')}`;
+  const mMY = s.match(/^(\d{2})\/(\d{4})$/);
+  if (mMY) return `${mMY[2]}-${mMY[1]}-01`;
+  const mYMD = s.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (mYMD) return `${mYMD[1]}-${mYMD[2]}-${mYMD[3]}`;
+  if (/^\d{4}-\d{2}$/.test(s)) return s + '-01';
+  // Nomes de mês PT-BR: "Fevereiro 2026", "fev/2026", "março de 2025"
+  const sl = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\./g, '');
+  const anoM = sl.match(/\b(\d{4})\b/);
+  if (anoM) {
+    const semAno = sl.replace(/\b\d{4}\b/, '').replace(/\bde\b/, '')
+                     .replace(/[\/\-_,]/g, ' ').replace(/\s+/g, ' ').trim();
+    const mesNum = MES_MAP_NORM[semAno];
+    if (mesNum) return `${anoM[1]}-${String(mesNum).padStart(2,'0')}-01`;
+  }
+  // Serial Excel
+  const n = parseFloat(s);
+  if (!isNaN(n) && n > 40000 && n < 60000) {
+    const d = new Date(Math.round((n - 25569) * 86400 * 1000));
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+  return '';
+}
+
+function normalizeCols(rows) {
+  return rows.map(r => {
+    const n = {};
+    Object.keys(r).forEach(k => {
+      const key = k.trim().toLowerCase().replace(/\s+/g, '_');
+      const val = typeof r[k] === 'string' ? r[k].trim() : r[k];
+      n[key] = DATE_FIELDS_NORM.includes(key) && val ? normalizeDate(val) : val;
+    });
+    return n;
+  });
+}
+
+/* mk / anoOf / parseMesRef: campos já chegam normalizados como ISO YYYY-MM-DD
+   após normalizeCols, então basta extrair o prefixo YYYY-MM. */
+function mk(d){
+  if(!d) return '';
+  const m=String(d).trim().match(/^(\d{4})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}` : '';
+}
+
+function anoOf(d){
+  const k=mk(d); return k ? k.substring(0,4) : '';
+}
+
+/* parseMesRef mantida para compatibilidade; com campos normalizados,
+   mk() já é suficiente — mas caso receba valor bruto ainda funciona. */
+function parseMesRef(v){
+  return mk(normalizeDate(v)) || mk(v);
+}
+
+function ml(key){
+  if(!key) return '';
+  const[y,m]=key.split('-');
+  return `${MONTHS_PT[parseInt(m)-1].substring(0,3)}/${y.substring(2)}`;
+}
+
+function isChurn(r){
+  const v=(r.churn||'').trim().toLowerCase();
+  return v==='sim'||v==='yes'||v==='true'||v==='1';
+}
+
+function margemColor(pct){
+  if(pct<20) return '#f44336';
+  if(pct<=40) return '#ff9800';
+  return '#4caf7d';
+}
+
+function parseCSV(url) {
+  return new Promise((res, rej) => {
+    Papa.parse(url, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      withCredentials: false,
+      complete: r => res(r.data || []),
+      error: (err) => rej(new Error('Falha ao carregar: ' + url.substring(0, 60) + '…'))
+    });
+  });
+}
+
+async function loadAll() {
+  const keys = ['fNMRR','fVendas','fNegociacao','fFaturamento','dClientes','fMargem','dNucleos'];
+  const results = await Promise.all(keys.map(k => parseCSV(URLS[k])));
+  keys.forEach((k, i) => { DB[k] = normalizeCols(results[i]); });
+}
+
+// ── FIX 3 + 9: filtros globais com meses de TODAS as tabelas com data; serviços de TODAS as fontes ──
+function populateGlobalFilters(){
+  const nmrr=DB.fNMRR||[], vendas=DB.fVendas||[], fat=DB.fFaturamento||[], mar=DB.fMargem||[];
+
+  // ANO: de fNMRR.ano + derivado de outras tabelas
+  const anosSet=new Set();
+  nmrr.forEach(r=>{if(r.ano) anosSet.add(String(r.ano).trim());});
+  vendas.forEach(r=>{const a=anoOf(r.mes_referencia);if(a) anosSet.add(a);});
+  fat.forEach(r=>{if(r.ano) anosSet.add(String(r.ano).trim());});
+  mar.forEach(r=>{const a=anoOf(r.mes_referencia);if(a) anosSet.add(a);});
+  const anos=[...anosSet].filter(Boolean).sort((a,b)=>b-a);
+  setSelect('f-ano',anos,v=>v);
+
+  // MÊS: de TODAS as tabelas com data
+  const mesMap=new Map();
+  function addMes(d){
+    const k=mk(d);if(!k||mesMap.has(k))return;
+    const[y,m]=k.split('-');
+    mesMap.set(k,{k,label:`${MONTHS_PT[parseInt(m)-1]} ${y}`,ts:new Date(k+'-01').getTime()});
+  }
+  nmrr.forEach(r=>addMes(r.mes_entrada));
+  vendas.forEach(r=>addMes(parseMesRef(r.mes_referencia)));
+  fat.forEach(r=>addMes(r.mes_servico));
+  mar.forEach(r=>addMes(r.mes_referencia));
+  const pairs=[...mesMap.values()].sort((a,b)=>b.ts-a.ts);
+  setSelect('f-mes',pairs.map(p=>p.k),k=>{const p=mesMap.get(k);return p?p.label:k;});
+
+  // FIX 9: SERVIÇO: de fNMRR + fVendas + fNegociacao
+  const srvSet=new Set();
+  [...nmrr,...vendas,...(DB.fNegociacao||[])].forEach(r=>{
+    const s=(r.servico||'').trim();if(s) srvSet.add(s);
+  });
+  setSelect('f-servico',[...srvSet].sort(),v=>v);
+}
+
+function setSelect(id,values,labelFn){
+  const el=document.getElementById(id);
+  const cur=el.value;
+  while(el.options.length>1) el.remove(1);
+  values.forEach(v=>el.appendChild(new Option(labelFn(v),v)));
+  if(cur&&[...el.options].some(o=>o.value===cur)) el.value=cur;
+}
+
+function populateSubFilters(tab){
+  const sb=document.getElementById('subbar');sb.innerHTML='';
+  if(tab==='tab1'){
+    addSub(sb,'FONTE','f1-fonte',uniq(DB.fNMRR||[],'fonte'));
+    addSub(sb,'CHURN','f1-churn',['Não','Sim']);
+  }else if(tab==='tab2'){
+    addSub(sb,'TIPO VENDA','f2-tipo',uniq(DB.fVendas||[],'tipo_venda'));
+    // FIX 6: status de fVendas filtram fVendas; status de fNegociacao filtram fNegociacao separadamente
+    addSub(sb,'STATUS VENDA','f2-status-v',uniq(DB.fVendas||[],'status'));
+    addSub(sb,'STATUS NEG.','f2-status-n',uniq(DB.fNegociacao||[],'status'));
+    addSub(sb,'REGISTRO','f2-registro',uniq(DB.fNegociacao||[],'tipo_registro'));
+  }else if(tab==='tab3'){
+    addSub(sb,'FONTE','f3-fonte',uniq(DB.fNegociacao||[],'fonte'));
+    addSub(sb,'REGISTRO','f3-registro',uniq(DB.fNegociacao||[],'tipo_registro'));
+  }else if(tab==='tab4'){
+    addSub(sb,'STATUS PGTO','f4-status',uniq(DB.fFaturamento||[],'status'));
+    addSub(sb,'NÚCLEO','f4-nucleo',uniq(DB.dNucleos||[],'nucleo'));
+  }
+}
+
+function addSub(container,label,id,options){
+  const wrap=document.createElement('div');wrap.className='filter-wrap';
+  const lbl=document.createElement('span');lbl.className='filter-label';lbl.textContent=label;
+  const sel=document.createElement('select');sel.className='filter-select';sel.id=id;
+  sel.innerHTML='<option value="">Todos</option>';
+  options.forEach(o=>sel.appendChild(new Option(o,o)));
+  sel.addEventListener('change',onFilterChange);
+  const rst=document.createElement('button');rst.className='filter-reset';rst.dataset.target=id;rst.textContent='×';
+  rst.addEventListener('click',()=>{sel.value='';onFilterChange();});
+  wrap.appendChild(lbl);wrap.appendChild(sel);wrap.appendChild(rst);
+  container.appendChild(wrap);
+}
+
+// ── FILTER FUNCTIONS ──
+function filterNMRR(){
+  const ano=gv('f-ano'),mes=gv('f-mes'),srv=gv('f-servico'),fonte=gv('f1-fonte'),churn=gv('f1-churn');
+  return(DB.fNMRR||[]).filter(r=>{
+    if(ano&&String(r.ano||'').trim()!==ano) return false;
+    if(mes&&mk(r.mes_entrada)!==mes) return false;
+    if(srv&&(r.servico||'').trim()!==srv) return false;
+    if(fonte&&(r.fonte||'').trim()!==fonte) return false;
+    if(churn){const c=isChurn(r);if(churn==='Sim'&&!c)return false;if(churn==='Não'&&c)return false;}
+    return true;
+  });
+}
+
+// FIX 1: filtro de ano usa anoOf() que nunca retorna '' para linhas válidas
+function filterVendas(){
+  const ano=gv('f-ano'),mes=gv('f-mes'),srv=gv('f-servico'),tipo=gv('f2-tipo'),statusV=gv('f2-status-v');
+  return(DB.fVendas||[]).filter(r=>{
+    const k=parseMesRef(r.mes_referencia);
+    if(ano){const a=k.substring(0,4);if(a&&a!==ano)return false;}
+    if(mes&&k&&k!==mes)return false;
+    if(srv&&(r.servico||'').trim()!==srv) return false;
+    if(tipo&&(r.tipo_venda||'').trim()!==tipo) return false;
+    if(statusV&&(r.status||'').trim()!==statusV) return false;
+    return true;
+  });
+}
+
+// FIX 6: fNegociacao filtrada apenas pelos seus próprios status
+function filterNegTab2(){
+  const srv=gv('f-servico'),reg=gv('f2-registro'),statusN=gv('f2-status-n');
+  return(DB.fNegociacao||[]).filter(r=>{
+    if(srv&&(r.servico||'').trim()!==srv) return false;
+    if(reg&&(r.tipo_registro||'').trim()!==reg) return false;
+    if(statusN&&(r.status||'').trim()!==statusN) return false;
+    return true;
+  });
+}
+
+function filterNegTab3(){
+  const srv=gv('f-servico'),reg=gv('f3-registro'),fonte=gv('f3-fonte');
+  return(DB.fNegociacao||[]).filter(r=>{
+    if(srv&&(r.servico||'').trim()!==srv) return false;
+    if(reg&&(r.tipo_registro||'').trim()!==reg) return false;
+    if(fonte&&(r.fonte||'').trim()!==fonte) return false;
+    return true;
+  });
+}
+
+function filterFaturamento(){
+  const ano=gv('f-ano'),mes=gv('f-mes'),status=gv('f4-status'),nucleo=gv('f4-nucleo');
+  const nucleoMap=buildNucleoMap();
+  return(DB.fFaturamento||[]).filter(r=>{
+    if(ano&&String(r.ano||'').trim()!==ano) return false;
+    // FIX 1: usa mk() direto, não depende de ano intermediário
+    if(mes&&mk(r.mes_servico)!==mes) return false;
+    if(status&&(r.status||'').trim()!==status) return false;
+    if(nucleo){const n=nucleoMap[(r.cliente||'').trim()];if(n!==nucleo)return false;}
+    return true;
+  });
+}
+
+function filterMargem(){
+  const ano=gv('f-ano'),mes=gv('f-mes'),nucleo=gv('f4-nucleo');
+  const nucleoMap=buildNucleoMap();
+  return(DB.fMargem||[]).filter(r=>{
+    if(ano){const a=anoOf(r.mes_referencia);if(a&&a!==ano)return false;}
+    if(mes){const k=mk(r.mes_referencia);if(k&&k!==mes)return false;}
+    if(nucleo){const n=nucleoMap[(r.cliente||'').trim()];if(n!==nucleo)return false;}
+    return true;
+  });
+}
+
+function buildNucleoMap(){
+  const map={};
+  (DB.dNucleos||[]).forEach(r=>{map[(r.cliente||'').trim()]=(r.nucleo||'').trim();});
+  return map;
+}
+
+// ── RENDER ROUTER ──
+function renderActiveTab(){
+  if(activeTab==='tab1') renderTab1();
+  else if(activeTab==='tab2') renderTab2();
+  else if(activeTab==='tab3') renderTab3();
+  else if(activeTab==='tab4') renderTab4();
+  else if(activeTab==='tabComp') renderTabComp();
+}
+
+
+function rankTable(containerId, entries, valFn, isCount, colorFn){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const total=entries.reduce((s,e)=>s+e[1],0);
+  const maxVal=entries[0]?entries[0][1]:1;
+  if(!entries.length){el.innerHTML='<p style="color:var(--text2);padding:20px;text-align:center;font-size:12px">Sem dados</p>';return;}
+  el.innerHTML=`<table class="rank-table"><tbody>${entries.map(([name,val],i)=>{
+    const pct=total>0?(val/total*100):0;
+    const barW=(val/maxVal*100).toFixed(0);
+    const color=colorFn?colorFn(val,i):'var(--primary)';
+    const valStr=isCount?val:fmtBRL(val);
+    return `<tr>
+      <td class="rank-num">${i+1}</td>
+      <td class="rank-name" title="${name}">${name}</td>
+      <td><div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${barW}%;background:${color}"></div></div></td>
+      <td class="rank-val">${valStr}</td>
+      <td class="rank-pct">${pct.toFixed(1)}%</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+// ────────────────── ABA 1 ──────────────────
+function renderTab1(){
+  const data=filterNMRR();
+  Object.values(charts1).forEach(c=>c.destroy());charts1={};
+  let newMRR=0,churnMRR=0,novos=0;
+  data.forEach(r=>{
+    const v=toFloat(r.valor);
+    if(isChurn(r)) churnMRR+=Math.abs(v);
+    else{newMRR+=v;novos++;}
+  });
+  const netMRR=newMRR-churnMRR;
+  // FIX 7: taxa de churn = churn / (newMRR + churnMRR) como proxy da base total do período
+  const baseProxy=newMRR+churnMRR;
+  const txChurn=baseProxy>0?churnMRR/baseProxy*100:0;
+
+  document.getElementById('kpi1').innerHTML=
+    kpi('NEW MRR',fmtBRL(newMRR),'Novas receitas recorrentes','var(--primary)')+
+    kpi('CHURN MRR',fmtBRL(churnMRR),'Receita perdida',churnMRR>0?'var(--red)':'var(--text)')+
+    kpi('NET MRR',fmtBRL(netMRR),'Diferença entre entrada e saída',netMRR>=0?'var(--green)':'var(--red)')+
+    kpi('CHURN MRR %',fmtPct(txChurn),'% do volume do período (proxy)',txChurn>5?'var(--orange)':'var(--text)')+
+    kpi('CLIENTES NOVOS',novos,'Contratos novos no período','var(--cyan)');
+
+  ch1Fonte(data,newMRR);
+  ch1Servico(data);
+  ch1MRRMes(data);
+  ch1NovosFonte(data);
+}
+
+function ch1Fonte(data,total){
+  const map={};
+  data.forEach(r=>{if(isChurn(r))return;const f=(r.fonte||'Sem fonte').trim();map[f]=(map[f]||0)+toFloat(r.valor);});
+  const s=Object.entries(map).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  if(charts1.fonte){charts1.fonte.destroy();delete charts1.fonte;}
+  const ctx=document.getElementById('ch1-fonte').getContext('2d');
+  charts1.fonte=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:s.map(x=>x[0]),
+      datasets:[{
+        data:s.map(x=>x[1]),
+        backgroundColor:s.map((_,i)=>i===0?'#e91e8c':COLORS[i%COLORS.length]+'cc'),
+        borderRadius:4,
+        barPercentage:0.6
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      layout:{padding:{right:0}},
+      plugins:{
+        legend:{display:false},
+        datalabels:{display:false},
+        tooltip:{...TT,callbacks:{label:c=>{
+          const pct=total>0?(c.raw/total*100).toFixed(1):'0';
+          return ` ${fmtBRL(c.raw)} (${pct}%)`;
+        }}}
+      },
+      scales:{
+        x:{
+          grid:{color:'rgba(37,37,69,0.6)'},border:{color:'transparent'},
+          ticks:{color:'#8888aa',font:{size:10},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}
+        },
+        y:{
+          grid:{display:false},border:{color:'transparent'},
+          ticks:{color:'#f0f0ff',font:{size:11},mirror:false}
+        }
+      }
+    }
+  });
+  const ins=document.getElementById('ins1-fonte');
+  if(s.length&&total>0){
+    ins.textContent=`💡 ${s[0][0]} responde por ${(s[0][1]/total*100).toFixed(0)}% do New MRR.`;
+    ins.style.display='block';
+  } else ins.style.display='none';
+}
+
+function ch1Servico(data){
+  const map={};
+  data.forEach(r=>{if(isChurn(r))return;const s=(r.servico||'Outros').trim();const v=toFloat(r.valor);if(v>0)map[s]=(map[s]||0)+v;});
+  const s=Object.entries(map).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  rankTable('tbl-ch1-servico',s,fmtBRL,false,null);
+}
+
+function ch1MRRMes(data){
+  const mapN={},mapC={};
+  data.forEach(r=>{
+    const k=mk(r.mes_entrada);if(!k)return;
+    const v=toFloat(r.valor);
+    if(isChurn(r)) mapC[k]=(mapC[k]||0)+Math.abs(v);
+    else mapN[k]=(mapN[k]||0)+v;
+  });
+  const all=[...new Set([...Object.keys(mapN),...Object.keys(mapC)])].sort();
+  const ctx=document.getElementById('ch1-mrr-mes').getContext('2d');
+  charts1.mrrmes=new Chart(ctx,{type:'bar',
+    data:{labels:all.map(ml),datasets:[
+      {label:'New MRR',data:all.map(k=>mapN[k]||0),backgroundColor:'#e91e8c',borderRadius:4},
+      {label:'Churn MRR',data:all.map(k=>mapC[k]||0),backgroundColor:'#9c27b0',borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#aaaacc',font:{size:11},boxWidth:12}},
+        datalabels:{
+          display:ctx2=>ctx2.dataset.data[ctx2.dataIndex]>=1000,
+          color:'#fff',font:{family:"'DM Sans',sans-serif",size:9,weight:'600'},clip:true,
+          formatter:v=>'R$'+(v/1000).toFixed(0)+'k'
+        },
+        tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${fmtBRL(c.raw)}`}}},
+      scales:{x:sX(),y:sYbrl()}}});
+}
+
+function ch1NovosFonte(data){
+  const map={};
+  data.forEach(r=>{if(isChurn(r))return;const f=(r.fonte||'Sem fonte').trim();map[f]=(map[f]||0)+1;});
+  const s=Object.entries(map).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  rankTable('tbl-ch1-novos-fonte',s,v=>v,true,null);
+}
+
+// ────────────────── ABA 2 ──────────────────
+function renderTab2(){
+  const vendas=filterVendas(),negs=filterNegTab2();
+  Object.values(charts2).forEach(c=>c.destroy());charts2={};
+
+  const totalV=vendas.reduce((s,r)=>s+toFloat(r.valor),0);
+  // agrupa tipos reais: Fixo = qualquer tipo contendo 'fixo' (case-insensitive), Variável = contendo 'variável', Upsell = contendo 'upsell'
+  const normStr=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const byTipoLike=pat=>vendas.filter(r=>normStr(r.tipo_venda||'').includes(normStr(pat)));
+  const fixo=byTipoLike('fixo').reduce((s,r)=>s+toFloat(r.valor),0);
+  const variavel=byTipoLike('variável').reduce((s,r)=>s+toFloat(r.valor),0);
+  const upsell=byTipoLike('upsell').reduce((s,r)=>s+toFloat(r.valor),0);
+  const ticket=vendas.length?totalV/vendas.length:0;
+
+  document.getElementById('kpi2').innerHTML=
+    kpi('TOTAL VENDAS',fmtBRL(totalV),vendas.length+' contratos','var(--primary)')+
+    kpi('VENDAS FIXO',fmtBRL(fixo),byTipoLike('fixo').length+' contratos','var(--cyan)')+
+    kpi('VENDAS VARIÁVEIS',fmtBRL(variavel),byTipoLike('variável').length+' contratos','var(--secondary)')+
+    kpi('VENDAS UPSELL',fmtBRL(upsell),byTipoLike('upsell').length+' contratos','var(--orange)')+
+    kpi('TICKET MÉDIO',fmtBRL(ticket),'por contrato','var(--text)');
+
+  ch2StackMes(vendas);
+  ch2Servico(vendas);
+  renderTabela(negs,'tbl2');
+  renderPipeline(negs);
+}
+
+/* parseMesRef: definida junto ao bloco DATE NORMALIZER acima */
+
+function ch2StackMes(vendas){
+  const tipos=[...new Set(vendas.map(r=>(r.tipo_venda||'').trim()).filter(Boolean))].sort();
+  const meses=[...new Set(vendas.map(r=>parseMesRef(r.mes_referencia)).filter(Boolean))].sort();
+  const ctx=document.getElementById('ch2-stack-mes').getContext('2d');
+  charts2.stackmes=new Chart(ctx,{type:'bar',
+    data:{labels:meses.map(ml),datasets:tipos.map((t,i)=>({
+      label:t,
+      data:meses.map(m=>vendas.filter(r=>parseMesRef(r.mes_referencia)===m&&(r.tipo_venda||'').trim()===t).reduce((s,r)=>s+toFloat(r.valor),0)),
+      backgroundColor:COLORS[i%COLORS.length],borderRadius:3}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:'#aaaacc',font:{size:10},boxWidth:10,padding:6}},
+        datalabels:{
+          display:ctx2=>ctx2.dataset.data[ctx2.dataIndex]>=5000,
+          color:'#fff',font:{family:"'DM Sans',sans-serif",size:9,weight:'600'},clip:true,
+          formatter:v=>'R$'+(v/1000).toFixed(0)+'k'
+        },
+        tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${fmtBRL(c.raw)}`}}},
+      scales:{x:{...sX(),stacked:true},y:{...sYbrl(),stacked:true}}}});
+}
+
+function ch2Servico(vendas){
+  const map={};
+  vendas.forEach(r=>{const s=(r.servico||'Outros').trim();map[s]=(map[s]||0)+toFloat(r.valor);});
+  const entries=Object.entries(map).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  rankTable('tbl-ch2-servico',entries,fmtBRL,false,null);
+}
+function renderTabela(negs,tbId){
+  const bc={'Aceita':'badge-green','Enviada':'badge-purple','Em Produção':'badge-cyan',
+    'Fora do ICP':'badge-red','Recusada':'badge-red','Em negociação':'badge-orange'};
+  const sorted=[...negs].sort((a,b)=>(a.cliente||'').localeCompare(b.cliente||''));
+  const tb=document.getElementById(tbId);tb.innerHTML='';
+  if(!sorted.length){
+    tb.innerHTML='<tr><td colspan="6" style="color:var(--text2);text-align:center;padding:20px">Nenhum registro encontrado</td></tr>';
+    return;
+  }
+  sorted.forEach(r=>{
+    const st=(r.status||'').trim();
+    tb.insertAdjacentHTML('beforeend',`<tr>
+      <td>${r.cliente||'—'}</td>
+      <td style="color:var(--text2)">${r.fonte||'—'}</td>
+      <td>${r.servico||'—'}</td>
+      <td><span class="badge ${bc[st]||'badge-orange'}">${st||'—'}</span></td>
+      <td style="color:var(--text2)">${r.tipo_venda||'—'}</td>
+      <td>${r.tipo_registro||'—'}</td>
+    </tr>`);
+  });
+}
+
+function renderPipeline(negs){
+  const cnt=s=>negs.filter(r=>(r.status||'').trim()===s).length;
+  const env=cnt('Enviada'),ace=cnt('Aceita'),prod=cnt('Em Produção');
+  const rec=negs.filter(r=>['Fora do ICP','Recusada'].includes((r.status||'').trim())).length;
+  const max=Math.max(env,ace,prod,rec,1);
+  const rows=[
+    {l:'Propostas Enviadas',v:env,c:'#9c27b0'},
+    {l:'Propostas Aceitas',v:ace,c:'#4caf7d'},
+    {l:'Em Produção',v:prod,c:'#00bcd4'},
+    {l:'Recusadas / Fora ICP',v:rec,c:'#f44336'}
+  ];
+  document.getElementById('pipeline-bars').innerHTML=rows.map(r=>`
+    <div class="pipeline-row">
+      <span class="pipeline-label">${r.l}</span>
+      <div class="pipeline-bar-wrap"><div class="pipeline-bar" style="width:${(r.v/max*100).toFixed(0)}%;background:${r.c}"></div></div>
+      <span class="pipeline-val">${r.v}</span>
+    </div>`).join('');
+  const conv=env>0?(ace/env*100).toFixed(1):0;
+  document.getElementById('pipeline-conversao').textContent=
+    `💡 Taxa de conversão: ${conv}% (${ace} aceitas / ${env} enviadas)`;
+}
+
+// ────────────────── ABA 3 ──────────────────
+function renderTab3(){
+  const vendas=filterVendas(),negs=filterNegTab3();
+  Object.values(charts3).forEach(c=>c.destroy());charts3={};
+
+  const clientes=new Set(vendas.map(r=>(r.cliente||'').trim()).filter(Boolean));
+  const total=vendas.reduce((s,r)=>s+toFloat(r.valor),0);
+  const aceitas=negs.filter(r=>(r.status||'').trim()==='Aceita').length;
+  const rec=negs.filter(r=>['Fora do ICP','Recusada'].includes((r.status||'').trim())).length;
+  const comDesfecho=aceitas+rec;
+  const txConv=comDesfecho>0?aceitas/comDesfecho*100:0;
+
+  document.getElementById('kpi3').innerHTML=
+    kpi('CLIENTES',clientes.size,'Com venda no período','var(--primary)')+
+    kpi('TOTAL GERADO',fmtBRL(total),'Receita total','var(--cyan)')+
+    kpi('TAXA CONVERSÃO',fmtPct(txConv),'Aceitas / com desfecho',txConv>=50?'var(--green)':'var(--orange)')+
+    kpi('PROPOSTAS ACEITAS',aceitas,'Convertidas','var(--green)')+
+    kpi('RECUSADAS / ICP',rec,'Descartados','var(--red)');
+
+  ch3Clientes(vendas,total);
+  ch3Status(negs);
+  renderTabela(negs,'tbl3');
+  ch3Registro(negs);
+}
+
+function ch3Clientes(vendas,total){
+  const map={};
+  vendas.forEach(r=>{const c=(r.cliente||'Outros').trim();map[c]=(map[c]||0)+toFloat(r.valor);});
+  const s=Object.entries(map).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  rankTable('tbl-ch3-clientes',s,fmtBRL,false,null);
+  const ins=document.getElementById('ins3-clientes');
+  if(s.length&&total>0){
+    ins.textContent=`💡 ${s[0][0]} representa ${(s[0][1]/total*100).toFixed(0)}% da receita total.`;
+    ins.style.display='block';
+  } else ins.style.display='none';
+}
+function ch3Status(negs){
+  const map={};
+  negs.forEach(r=>{const s=(r.status||'Sem status').trim();map[s]=(map[s]||0)+1;});
+  const sc={'Aceita':'#4caf7d','Enviada':'#9c27b0','Em Produção':'#00bcd4',
+    'Fora do ICP':'#f44336','Recusada':'#f44336','Em negociação':'#ff9800'};
+  const s=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const ctx=document.getElementById('ch3-status').getContext('2d');
+  charts3.status=new Chart(ctx,{type:'bar',
+    data:{labels:s.map(x=>x[0]),datasets:[{
+      data:s.map(x=>x[1]),
+      backgroundColor:s.map(x=>sc[x[0]]||'#607d8b'),
+      borderRadius:4,barThickness:28}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24}},
+      plugins:{legend:{display:false},
+        datalabels:{...DL,anchor:'end',align:'end',formatter:v=>v},
+        tooltip:{...TT,callbacks:{label:c=>` ${c.raw} propostas`}}},
+      scales:{x:sX(),y:sY()}}});
+}
+
+function ch3Registro(negs){
+  const regs=[...new Set(negs.map(r=>(r.tipo_registro||'').trim()).filter(Boolean))].sort();
+  const sts=['Aceita','Em Produção','Enviada','Fora do ICP','Recusada'];
+  const sc={'Aceita':'#4caf7d','Em Produção':'#00bcd4','Enviada':'#9c27b0',
+    'Fora do ICP':'#f44336','Recusada':'#f44336'};
+  const datasets=sts.map(st=>({
+    label:st,
+    data:regs.map(reg=>negs.filter(r=>(r.tipo_registro||'').trim()===reg&&(r.status||'').trim()===st).length),
+    backgroundColor:sc[st]||'#607d8b',borderRadius:3
+  })).filter(d=>d.data.some(v=>v>0));
+  const ctx=document.getElementById('ch3-registro').getContext('2d');
+  charts3.registro=new Chart(ctx,{type:'bar',
+    data:{labels:regs,datasets},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+      plugins:{legend:{display:true,labels:{color:'#aaaacc',font:{size:10},boxWidth:10}},
+        datalabels:{
+          display:ctx2=>ctx2.dataset.data[ctx2.dataIndex]>0,
+          color:'#fff',font:{family:"'DM Sans',sans-serif",size:11,weight:'700'},clip:true,
+          formatter:v=>v
+        },
+        tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}`}}},
+      scales:{x:{...sX(),stacked:true},y:{...sY(),stacked:true}}}});
+}
+
+// ────────────────── ABA 4 ──────────────────
+function renderTab4(){
+  const fat=filterFaturamento(),mar=filterMargem();
+  Object.values(charts4).forEach(c=>c.destroy());charts4={};
+
+  const recTotal=fat.reduce((s,r)=>s+toFloat(r.valor_nota),0);
+  const aReceber=fat.filter(r=>(r.status||'').trim()!=='Recebido').reduce((s,r)=>s+toFloat(r.valor_a_receber),0);
+  const atrasado=fat.filter(r=>(r.status||'').trim()==='Atrasado').reduce((s,r)=>s+toFloat(r.valor_nota),0);
+  const inadimp=recTotal>0?atrasado/recTotal*100:0;
+  // FIX 2: usa toPct() para normalizar pct_lucro independente do formato
+  const pcts=mar.map(r=>toPct(r.pct_lucro)).filter(v=>v!==0&&!isNaN(v));
+  const margemMedia=pcts.length?pcts.reduce((a,b)=>a+b,0)/pcts.length:0;
+
+  document.getElementById('kpi4').innerHTML=
+    kpi('RECEITA TOTAL',fmtBRL(recTotal),'Total faturado','var(--primary)')+
+    kpi('VALOR A RECEBER',fmtBRL(aReceber),'Aguardando pagamento','var(--orange)')+
+    kpi('INADIMPLÊNCIA',fmtPct(inadimp),'Valor em atraso',inadimp>0?'var(--red)':'var(--green)')+
+    kpi('MARGEM MÉDIA',fmtPct(margemMedia),'Média de lucratividade',margemColor(margemMedia));
+
+  ch4FatMes(fat);
+  ch4StatusPgto(fat);
+  ch4ClientesFat(fat);
+  ch4MargemCliente(mar);
+  ch4CustoLucro(mar);
+  ch4Nucleo(mar);
+}
+
+function ch4FatMes(fat){
+  const mapF={},mapR={};
+  fat.forEach(r=>{
+    const k=mk(r.mes_servico);if(!k)return;
+    mapF[k]=(mapF[k]||0)+toFloat(r.valor_nota);
+    mapR[k]=(mapR[k]||0)+toFloat(r.valor_a_receber);
+  });
+  const all=[...new Set([...Object.keys(mapF),...Object.keys(mapR)])].sort();
+  const ctx=document.getElementById('ch4-fat-mes').getContext('2d');
+  charts4.fatmes=new Chart(ctx,{type:'line',
+    data:{labels:all.map(ml),datasets:[
+      {label:'Faturamento',data:all.map(k=>mapF[k]||0),
+        borderColor:'#e91e8c',backgroundColor:'rgba(233,30,140,0.1)',
+        pointBackgroundColor:'#e91e8c',tension:.3,fill:true,borderWidth:2,pointRadius:4},
+      {label:'A Receber',data:all.map(k=>mapR[k]||0),
+        borderColor:'#00bcd4',backgroundColor:'rgba(0,188,212,0.07)',
+        pointBackgroundColor:'#00bcd4',tension:.3,fill:true,borderWidth:2,pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#aaaacc',font:{size:11},boxWidth:12}},
+        datalabels:{display:false},
+        tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${fmtBRL(c.raw)}`}}},
+      scales:{x:sX(),y:sYbrl()}}});
+}
+
+function ch4StatusPgto(fat){
+  const map={};
+  fat.forEach(r=>{const s=(r.status||'Sem status').trim();map[s]=(map[s]||0)+toFloat(r.valor_nota);});
+  const sc={'Recebido':'#4caf7d','NF Enviada':'#00bcd4','Faturar':'#ffc107','Atrasado':'#f44336'};
+  const entries=Object.entries(map).filter(e=>e[1]>0);
+  const total=entries.reduce((s,e)=>s+e[1],0);
+  const ctx=document.getElementById('ch4-status-pgto').getContext('2d');
+  charts4.statuspgto=new Chart(ctx,{type:'doughnut',
+    data:{labels:entries.map(e=>e[0]),datasets:[{
+      data:entries.map(e=>e[1]),
+      backgroundColor:entries.map(e=>sc[e[0]]||'#607d8b'),
+      borderColor:'#1a1a2e',borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{display:true,position:'right',labels:{color:'#aaaacc',font:{size:10},boxWidth:10,padding:6}},
+        tooltip:{...TT,callbacks:{label:c=>` ${c.label}: ${fmtBRL(c.raw)}${total>0?' ('+(c.raw/total*100).toFixed(1)+'%)':''}`}},
+        datalabels:{...DL,font:{size:10,weight:'700'},
+          formatter:v=>total>0?`${(v/total*100).toFixed(1)}%`:'',
+          display:c=>total>0&&(c.dataset.data[c.dataIndex]/total)>=0.05}}}});
+}
+
+function ch4ClientesFat(fat){
+  const map={};
+  fat.forEach(r=>{const c=(r.cliente||'Outros').trim();map[c]=(map[c]||0)+toFloat(r.valor_nota);});
+  const s=Object.entries(map).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  rankTable('tbl-ch4-clientes-fat',s,fmtBRL,false,null);
+}
+// FIX 4: exclui clientes com pct_lucro = 0 e usa toPct
+function ch4MargemCliente(mar){
+  const map={},cnt={};
+  mar.forEach(r=>{
+    const c=(r.cliente||'').trim();if(!c)return;
+    const p=toPct(r.pct_lucro);
+    if(p===0||isNaN(p))return;
+    map[c]=(map[c]||0)+p;cnt[c]=(cnt[c]||0)+1;
+  });
+  const avgs=Object.keys(map)
+    .map(c=>({c,v:map[c]/cnt[c]}))
+    .filter(x=>x.v!==0)
+    .sort((a,b)=>b.v-a.v)
+    .slice(0,12);
+  const el=document.getElementById('tbl-ch4-margem-cliente');
+  if(!el)return;
+  const maxV=avgs[0]?avgs[0].v:1;
+  if(!avgs.length){el.innerHTML='<p style="color:var(--text2);padding:20px;text-align:center;font-size:12px">Sem dados</p>';return;}
+  el.innerHTML=`<table class="rank-table"><tbody>${avgs.map(({c,v},i)=>{
+    const color=margemColor(v);
+    const barW=(v/maxV*100).toFixed(0);
+    return `<tr>
+      <td class="rank-num">${i+1}</td>
+      <td class="rank-name" title="${c}">${c}</td>
+      <td><div class="rank-bar-wrap"><div class="rank-bar-fill" style="width:${barW}%;background:${color}"></div></div></td>
+      <td class="rank-val" style="color:${color}">${fmtPct(v)}</td>
+      <td class="rank-pct">${v<20?'⚠️ baixa':v<=40?'médio':'✓ boa'}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+function ch4CustoLucro(mar){
+  const mapC={},mapL={};
+  mar.forEach(r=>{
+    const k=mk(r.mes_referencia);if(!k)return;
+    mapC[k]=(mapC[k]||0)+toFloat(r.custo_total);
+    mapL[k]=(mapL[k]||0)+toFloat(r.lucro);
+  });
+  const all=[...new Set([...Object.keys(mapC),...Object.keys(mapL)])].sort();
+  const ctx=document.getElementById('ch4-custo-lucro').getContext('2d');
+  charts4.custolucro=new Chart(ctx,{type:'bar',
+    data:{labels:all.map(ml),datasets:[
+      {label:'Custo Total',data:all.map(k=>mapC[k]||0),backgroundColor:'#9c27b0',borderRadius:3},
+      {label:'Lucro',data:all.map(k=>mapL[k]||0),backgroundColor:'#4caf7d',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{color:'#aaaacc',font:{size:11},boxWidth:12}},
+        datalabels:{
+          display:ctx2=>ctx2.dataset.data[ctx2.dataIndex]>=10000,
+          color:'#fff',font:{family:"'DM Sans',sans-serif",size:9,weight:'600'},clip:true,
+          formatter:v=>'R$'+(v/1000).toFixed(0)+'k'
+        },
+        tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${fmtBRL(c.raw)}`}}},
+      scales:{x:{...sX(),stacked:true},y:{...sYbrl(),stacked:true}}}});
+}
+
+// margem ponderada por fee — lucro total / fee total por núcleo
+function ch4Nucleo(mar){
+  const nucleoMap=buildNucleoMap();
+  const mapFee={},mapLucro={};
+  mar.forEach(r=>{
+    const c=(r.cliente||'').trim();
+    const n=nucleoMap[c]||'Sem núcleo';
+    const fee=toFloat(r.fee_mensal||r.valor||0);
+    const lucro=toFloat(r.lucro||0);
+    if(fee===0)return;
+    mapFee[n]=(mapFee[n]||0)+fee;
+    mapLucro[n]=(mapLucro[n]||0)+lucro;
+  });
+  const avgs=Object.keys(mapFee)
+    .map(n=>({n,v:mapFee[n]>0?mapLucro[n]/mapFee[n]*100:0}))
+    .filter(x=>x.v!==0)
+    .sort((a,b)=>b.v-a.v);
+  const labels=avgs.map(x=>x.n);
+  const vals=avgs.map(x=>x.v);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const ctx=document.getElementById('ch4-nucleo').getContext('2d');
+  charts4.nucleo=new Chart(ctx,{type:'doughnut',
+    data:{labels,datasets:[{
+      data:vals,
+      backgroundColor:avgs.map(x=>margemColor(x.v)),
+      borderColor:'#1a1a2e',borderWidth:2,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{
+        legend:{display:true,position:'right',labels:{color:'#8888aa',font:{size:11},boxWidth:10,padding:8}},
+        datalabels:{...DL,font:{size:10,weight:'700'},
+          formatter:v=>`${fmtPct(v)}`,
+          display:c=>total>0&&(c.dataset.data[c.dataIndex]/total)>=0.05},
+        tooltip:{...TT,callbacks:{label:c=>` ${c.label}: ${fmtPct(c.raw)} (média)`}}}}});
+}
+
+// ── CHART HELPERS ──
+// FIX 8: barHSolid — cor uniforme, sem degradê enganoso
+function barHSolid(canvasId,store,key,labels,vals,color,ttFn,dlFn,barSz){
+  const ctx=document.getElementById(canvasId).getContext('2d');
+  store[key]=new Chart(ctx,{type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:color,borderRadius:4,barThickness:barSz||18}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:80}},
+      plugins:{legend:{display:false},
+        datalabels:{...DL,anchor:'end',align:'end',font:{size:barSz?9:10},formatter:dlFn||(v=>v)},
+        tooltip:{...TT,callbacks:{label:ttFn}}},
+      scales:{
+        x:{...sXg(),ticks:{color:'#8888aa',font:{size:10},callback:v=>'R$'+(v/1000).toFixed(0)+'k'}},
+        y:{...sX(),ticks:{color:'#f0f0ff',font:{size:11}}}}}});
+}
+
+function donut(canvasId,store,key,map,isCount){
+  const sorted=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const labels=sorted.map(x=>x[0]),vals=sorted.map(x=>x[1]);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const colors=labels.map((_,i)=>COLORS[i%COLORS.length]);
+
+  // destroy old chart
+  if(store[key]) store[key].destroy();
+
+  // build custom HTML legend with value + pct
+  const legendId=canvasId+'-legend';
+  let legendEl=document.getElementById(legendId);
+  if(!legendEl){
+    legendEl=document.createElement('div');
+    legendEl.id=legendId;
+    legendEl.style.cssText='flex:1;display:flex;flex-direction:column;gap:5px;overflow-y:auto;max-height:260px;padding-left:16px;';
+    const wrap=document.getElementById(canvasId).closest('.chart-container');
+    if(wrap&&wrap.parentNode){
+      // convert container to flex row
+      wrap.style.cssText='flex:0 0 220px;height:220px;position:relative;';
+      const parent=wrap.parentNode;
+      if(parent.style.display!=='flex'){
+        parent.style.display='flex';
+        parent.style.alignItems='center';
+        parent.style.gap='8px';
+      }
+      parent.appendChild(legendEl);
+    }
+  }
+  legendEl.innerHTML=sorted.map(([label,val],i)=>{
+    const pct=total>0?(val/total*100).toFixed(1):'0';
+    const valStr=isCount?`${val} (${pct}%)`:`${fmtBRL(val)} · ${pct}%`;
+    return `<div style="display:flex;align-items:center;gap:7px;font-size:11px;">
+      <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>
+      <span style="color:#f0f0ff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${label}">${label}</span>
+      <span style="color:#8888aa;white-space:nowrap;font-family:'Space Mono',monospace;font-size:10px;">${valStr}</span>
+    </div>`;
+  }).join('');
+
+  const ctx=document.getElementById(canvasId).getContext('2d');
+  store[key]=new Chart(ctx,{type:'doughnut',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderColor:'#1a1a2e',borderWidth:2,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{
+        legend:{display:false},
+        tooltip:{...TT,callbacks:{label:c=>{
+          const pct=total>0?(c.raw/total*100).toFixed(1):'0';
+          return isCount?` ${c.label}: ${c.raw} (${pct}%)`:` ${c.label}: ${fmtBRL(c.raw)} (${pct}%)`;
+        }}},
+        datalabels:{
+          color:'#fff',
+          font:{family:"'Space Mono',monospace",size:10,weight:'700'},
+          clip:false,
+          formatter:(v,c)=>{
+            const pct=total>0?(v/total*100):0;
+            return pct>=7?pct.toFixed(0)+'%':'';
+          },
+          display:c=>total>0&&(c.dataset.data[c.dataIndex]/total)>=0.07
+        }}}});
+}
+
+function kpi(label,value,sub,color){
+  return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value" style="color:${color}">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+}
+
+// ── NAV & INIT ──
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById(tab).classList.add('active');
+  activeTab=tab;
+  populateSubFilters(tab);
+  renderActiveTab();
+}
+
+function onFilterChange(){renderActiveTab();}
+
+function updateTimestamp(){
+  const n=new Date();
+  document.getElementById('last-update').textContent=
+    `Atualizado: ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+}
+
+async function init(){
+  try{
+    await loadAll();
+    populateGlobalFilters();
+    populateSubFilters('tab1');
+    document.querySelectorAll('.filter-select').forEach(s=>s.addEventListener('change',onFilterChange));
+    document.querySelectorAll('.filter-reset').forEach(b=>b.addEventListener('click',()=>{
+      document.getElementById(b.dataset.target).value='';onFilterChange();
+    }));
+    document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+    renderTab1();
+    updateTimestamp();
+    populateCompFilters();
+    document.getElementById('loading-overlay').style.display='none';
+    setInterval(async()=>{
+      await loadAll();populateGlobalFilters();renderActiveTab();updateTimestamp();
+    },5*60*1000);
+  }catch(e){
+    document.getElementById('loading-overlay').style.display='none';
+    const err=document.getElementById('error-msg');err.style.display='block';
+    err.textContent=`Erro ao carregar dados: ${e.message||e}`;
+  }
+}
+
+init();
+
+/* ── TAB COMPARATIVO — COMERCIAL ── */
+let chartsComp={};
+
+function populateCompFilters(){
+  const nmrr=DB.fNMRR||[], vendas=DB.fVendas||[];
+  const aSet=new Set();
+  nmrr.forEach(r=>{if(r.ano)aSet.add(String(r.ano).trim());});
+  vendas.forEach(r=>{const a=anoOf(r.mes_referencia);if(a)aSet.add(a);});
+  const anos=[...aSet].filter(Boolean).sort((a,b)=>b-a);
+  const mesMap=new Map();
+  function addM(d){const k=mk(d);if(!k||mesMap.has(k))return;const[y,m]=k.split('-');mesMap.set(k,{k,label:`${MONTHS_PT[parseInt(m)-1]} ${y}`,ts:new Date(k+'-01').getTime()});}
+  nmrr.forEach(r=>addM(r.mes_entrada));
+  vendas.forEach(r=>addM(parseMesRef(r.mes_referencia)));
+  const meses=[...mesMap.values()].sort((a,b)=>b.ts-a.ts);
+  ['cmp-a-ano','cmp-b-ano'].forEach(id=>{
+    const el=document.getElementById(id);while(el.options.length>1)el.remove(1);
+    anos.forEach(a=>el.appendChild(new Option(a,a)));
+  });
+  ['cmp-a-mes','cmp-b-mes'].forEach(id=>{
+    const el=document.getElementById(id);while(el.options.length>1)el.remove(1);
+    meses.forEach(m=>el.appendChild(new Option(m.label,m.key)));
+  });
+  if(anos.length>=1)document.getElementById('cmp-a-ano').value=anos[0];
+  if(anos.length>=2)document.getElementById('cmp-b-ano').value=anos[1];
+  ['cmp-a-ano','cmp-a-mes','cmp-b-ano','cmp-b-mes'].forEach(id=>
+    document.getElementById(id).addEventListener('change',renderTabComp));
+}
+
+function _fNMC(ano,mes){
+  return(DB.fNMRR||[]).filter(r=>{
+    if(ano&&String(r.ano||'').trim()!==ano)return false;
+    if(mes&&mk(r.mes_entrada)!==mes)return false;
+    return true;
+  });
+}
+function _fVC2(ano,mes){
+  return(DB.fVendas||[]).filter(r=>{
+    const k=parseMesRef(r.mes_referencia);
+    if(ano){const a=k.substring(0,4);if(a&&a!==ano)return false;}
+    if(mes&&k&&k!==mes)return false;
+    return true;
+  });
+}
+function _fMC(ano,mes){
+  return(DB.fMargem||[]).filter(r=>{
+    if(ano){const a=anoOf(r.mes_referencia);if(a&&a!==ano)return false;}
+    if(mes){const k=mk(r.mes_referencia);if(k&&k!==mes)return false;}
+    return true;
+  });
+}
+function _pL2(anoId,mesId){
+  const ano=document.getElementById(anoId).value,mes=document.getElementById(mesId).value;
+  if(!ano&&!mes)return'Todos os períodos';
+  if(mes){const el=document.getElementById(mesId);return el.options[el.selectedIndex]?.textContent||mes;}
+  return`Ano ${ano}`;
+}
+function _dt(a,b,hb){
+  if(a===0&&b===0)return'<span class="cmp-delta cmp-delta-flat">≈</span>';
+  if(b===0)return'<span class="cmp-delta cmp-delta-flat">N/D</span>';
+  const p=(a-b)/Math.abs(b)*100,ok=hb?p>0.5:p<-0.5,bad=hb?p<-0.5:p>0.5;
+  const cls=ok?'cmp-delta-up':bad?'cmp-delta-down':'cmp-delta-flat';
+  return`<span class="cmp-delta ${cls}">${p>0?'+':''}${p.toFixed(1)}%</span>`;
+}
+function _cc(label,a,b,fmt,hb){
+  return`<div class="cmp-kpi-card"><div class="cmp-kpi-label">${label}</div>
+    <div class="cmp-row"><span class="cmp-val cmp-val-a">${fmt(a)}</span>${_dt(a,b,hb)}<span class="cmp-val cmp-val-b">${fmt(b)}</span></div></div>`;
+}
+
+function renderTabComp(){
+  const aaA=gv('cmp-a-ano'),amA=gv('cmp-a-mes'),aaB=gv('cmp-b-ano'),amB=gv('cmp-b-mes');
+  const lA=_pL2('cmp-a-ano','cmp-a-mes'),lB=_pL2('cmp-b-ano','cmp-b-mes');
+  document.getElementById('cmp-lbl-a').textContent=`A — ${lA}`;
+  document.getElementById('cmp-lbl-b').textContent=`B — ${lB}`;
+
+  const nA=_fNMC(aaA,amA),nB=_fNMC(aaB,amB);
+  const vA=_fVC2(aaA,amA),vB=_fVC2(aaB,amB);
+  const mA=_fMC(aaA,amA),mB=_fMC(aaB,amB);
+
+  function mrr(d){return d.filter(r=>!isChurn(r)).reduce((s,r)=>s+toFloat(r.valor),0);}
+  function churn(d){return d.filter(r=>isChurn(r)).reduce((s,r)=>s+Math.abs(toFloat(r.valor)),0);}
+  const nwA=mrr(nA),nwB=mrr(nB),chA=churn(nA),chB=churn(nB);
+  const netA=nwA-chA,netB=nwB-chB;
+  const novA=nA.filter(r=>!isChurn(r)).length,novB=nB.filter(r=>!isChurn(r)).length;
+  const pcsA=mA.map(r=>toPct(r.pct_lucro)).filter(v=>v!==0&&!isNaN(v));
+  const pcsB=mB.map(r=>toPct(r.pct_lucro)).filter(v=>v!==0&&!isNaN(v));
+  const mgA=pcsA.length?pcsA.reduce((a,b)=>a+b,0)/pcsA.length:0;
+  const mgB=pcsB.length?pcsB.reduce((a,b)=>a+b,0)/pcsB.length:0;
+
+  document.getElementById('cmp-kpis').innerHTML=
+    _cc('NEW MRR',   nwA,  nwB,  fmtBRL, true)  +
+    _cc('CHURN MRR', chA,  chB,  fmtBRL, false) +
+    _cc('NET MRR',   netA, netB, fmtBRL, true)  +
+    _cc('CLIENTES NOVOS', novA, novB, v=>v, true) +
+    _cc('MARGEM MÉDIA',  mgA,  mgB,  v=>v.toFixed(1)+'%', true);
+
+  Object.values(chartsComp).forEach(c=>c.destroy());chartsComp={};
+  const CA='rgba(233,30,140,0.82)',CB='rgba(0,188,212,0.82)';
+
+  function bCom(id,labels,dA,dB,horiz,fmtTT){
+    return new Chart(document.getElementById(id).getContext('2d'),{
+      type:'bar',
+      data:{labels,datasets:[
+        {label:lA,data:dA,backgroundColor:CA,borderRadius:4},
+        {label:lB,data:dB,backgroundColor:CB,borderRadius:4}
+      ]},
+      options:{
+        indexAxis:horiz?'y':'x',responsive:true,maintainAspectRatio:false,
+        layout:{padding:{[horiz?'right':'top']:24}},
+        plugins:{
+          legend:{display:true,labels:{color:'#aaaacc',font:{size:11},boxWidth:12}},
+          datalabels:{display:false},
+          tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${fmtTT(c.raw)}`}}
+        },
+        scales:horiz?{x:{...sXg()},y:{...sY()}}:{x:{...sX()},y:{...sY()}}
+      }
+    });
+  }
+
+  // Chart 1: New MRR por Fonte
+  const fA={},fB={};
+  nA.filter(r=>!isChurn(r)).forEach(r=>{const f=(r.fonte||'Sem fonte').trim();fA[f]=(fA[f]||0)+toFloat(r.valor);});
+  nB.filter(r=>!isChurn(r)).forEach(r=>{const f=(r.fonte||'Sem fonte').trim();fB[f]=(fB[f]||0)+toFloat(r.valor);});
+  const fonts=[...new Set([...Object.keys(fA),...Object.keys(fB)])].sort((a,b)=>((fA[b]||0)+(fB[b]||0))-((fA[a]||0)+(fB[a]||0)));
+  chartsComp.fonte=bCom('cmp-ch-fonte',fonts,fonts.map(f=>fA[f]||0),fonts.map(f=>fB[f]||0),true,fmtBRL);
+
+  // Chart 2: Vendas por Tipo
+  const tA={},tB={};
+  vA.forEach(r=>{const t=(r.tipo_venda||'Outros').trim();tA[t]=(tA[t]||0)+toFloat(r.valor);});
+  vB.forEach(r=>{const t=(r.tipo_venda||'Outros').trim();tB[t]=(tB[t]||0)+toFloat(r.valor);});
+  const tipos=[...new Set([...Object.keys(tA),...Object.keys(tB)])].sort((a,b)=>((tA[b]||0)+(tB[b]||0))-((tA[a]||0)+(tB[a]||0)));
+  chartsComp.tipo=bCom('cmp-ch-tipo',tipos,tipos.map(t=>tA[t]||0),tipos.map(t=>tB[t]||0),false,fmtBRL);
+
+  // Chart 3: Mix de Serviços MRR
+  const sA={},sB={};
+  nA.filter(r=>!isChurn(r)).forEach(r=>{const s=(r.servico||'Outros').trim();sA[s]=(sA[s]||0)+toFloat(r.valor);});
+  nB.filter(r=>!isChurn(r)).forEach(r=>{const s=(r.servico||'Outros').trim();sB[s]=(sB[s]||0)+toFloat(r.valor);});
+  const srvs=[...new Set([...Object.keys(sA),...Object.keys(sB)])].sort((a,b)=>((sA[b]||0)+(sB[b]||0))-((sA[a]||0)+(sB[a]||0)));
+  chartsComp.srv=bCom('cmp-ch-srv',srvs,srvs.map(s=>sA[s]||0),srvs.map(s=>sB[s]||0),true,fmtBRL);
+
+  // Chart 4: Margem por Cliente Top 10 (fee-weighted)
+  function byClMargem(mar){
+    const fee={},luc={};
+    mar.forEach(r=>{const c=(r.cliente||'').trim();if(!c)return;fee[c]=(fee[c]||0)+toFloat(r.fee_mensal||0);luc[c]=(luc[c]||0)+toFloat(r.lucro||0);});
+    return Object.keys(fee).filter(c=>fee[c]>0).map(c=>({c,v:luc[c]/fee[c]*100})).sort((a,b)=>b.v-a.v).slice(0,10);
+  }
+  const mrgA=byClMargem(mA),mrgB=byClMargem(mB);
+  const mClients=[...new Set([...mrgA.map(x=>x.c),...mrgB.map(x=>x.c)])].slice(0,10);
+  const mMapA=Object.fromEntries(mrgA.map(x=>[x.c,x.v]));
+  const mMapB=Object.fromEntries(mrgB.map(x=>[x.c,x.v]));
+  chartsComp.margem=bCom('cmp-ch-margem',mClients,
+    mClients.map(c=>parseFloat((mMapA[c]||0).toFixed(1))),
+    mClients.map(c=>parseFloat((mMapB[c]||0).toFixed(1))),
+    true,v=>v.toFixed(1)+'%');
+}
+</script>
+</body>
+</html>
