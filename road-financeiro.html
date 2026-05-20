@@ -764,10 +764,14 @@ function buildFilters() {
 }
 
 function applyFilters(rows) {
+  var sfVariante  = getSubFilter('sf-variante');
+  var sfCategoria = getSubFilter('sf-categoria');
   return rows.filter(function(r) {
     if (FILTERS.ano !== 'Todos' && getAno(r.data_referencia) !== parseInt(FILTERS.ano)) return false;
     if (FILTERS.mes !== 'Todos' && getMes(r.data_referencia) !== FILTERS.mes) return false;
     if (FILTERS.tipo !== 'Todos' && (r.tipo || '').trim().toLowerCase() !== FILTERS.tipo.toLowerCase()) return false;
+    if (sfVariante  && (r.variante  || '').trim() !== sfVariante)  return false;
+    if (sfCategoria && (r.categoria || '').trim() !== sfCategoria) return false;
     return true;
   });
 }
@@ -1029,10 +1033,12 @@ function renderChartDespesas(rows) {
 }
 
 function applyFiltersOrc(rows) {
+  var sfArea = getSubFilter('sf-area');
   return rows.filter(function(r) {
     var dateField = r.mes_referencia || r.data_referencia || '';
     if (FILTERS.ano !== 'Todos' && getAno(dateField) !== parseInt(FILTERS.ano)) return false;
     if (FILTERS.mes !== 'Todos' && getMes(dateField) !== FILTERS.mes) return false;
+    if (sfArea && (r.area || '').trim() !== sfArea) return false;
     return true;
   });
 }
@@ -1227,10 +1233,17 @@ function getPctLucro(r) {
 }
 
 function applyFiltersMargem(rows) {
+  var sfSegmento = getSubFilter('sf-segmento');
+  var sfCliente  = getSubFilter('sf-cliente');
   return rows.filter(function(r) {
     var d = r.mes_referencia || r.data_referencia || '';
     if (FILTERS.ano !== 'Todos' && getAno(d) !== parseInt(FILTERS.ano)) return false;
     if (FILTERS.mes !== 'Todos' && getMes(d) !== FILTERS.mes) return false;
+    if (sfCliente && (r.cliente || '').trim() !== sfCliente) return false;
+    if (sfSegmento) {
+      var info = getNucleo(r.cliente);
+      if (info.segmento !== sfSegmento) return false;
+    }
     return true;
   });
 }
@@ -1245,8 +1258,7 @@ function renderTab3() {
 
   if (FILTERS.nucleo !== 'Todos') {
     rows = rows.filter(function(r) {
-      var info = getNucleo(r.cliente);
-      return info.nucleo === FILTERS.nucleo;
+      return getNucleo(r.cliente).nucleo === FILTERS.nucleo;
     });
   }
 
@@ -1403,44 +1415,112 @@ function renderTbl3(rows) {
   });
 }
 
+function getUnique(arr, field) {
+  var seen = {}, out = [];
+  arr.forEach(function(r) {
+    var v = (r[field] || '').trim();
+    if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+  });
+  return out.sort();
+}
+
+function getSubFilter(id) {
+  var el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function addSubFilter(container, label, id, options, onChange) {
+  var wrap = document.createElement('div');
+  wrap.className = 'filter-wrap';
+
+  var lbl = document.createElement('span');
+  lbl.className = 'filter-label';
+  lbl.textContent = label;
+
+  var sel = document.createElement('select');
+  sel.className = 'filter-select';
+  sel.id = id;
+  sel.style.minWidth = '130px';
+  var opt0 = document.createElement('option');
+  opt0.value = ''; opt0.textContent = 'Todos';
+  sel.appendChild(opt0);
+  options.forEach(function(o) {
+    var opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', onChange);
+
+  var rst = document.createElement('button');
+  rst.className = 'filter-reset';
+  rst.textContent = '×';
+  rst.addEventListener('click', function() { sel.value = ''; onChange(); });
+
+  wrap.appendChild(lbl); wrap.appendChild(sel); wrap.appendChild(rst);
+  container.appendChild(wrap);
+}
+
+function addToggleFilter(container, label, options, currentVal, onChange) {
+  var wrap = document.createElement('div');
+  wrap.className = 'filter-wrap';
+
+  var lbl = document.createElement('span');
+  lbl.className = 'filter-label';
+  lbl.textContent = label;
+
+  var grp = document.createElement('div');
+  grp.className = 'toggle-group';
+
+  options.forEach(function(opt) {
+    var btn = document.createElement('button');
+    btn.className = 'toggle-btn' + (opt.value === currentVal ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.addEventListener('click', function() {
+      grp.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      onChange(opt.value);
+    });
+    grp.appendChild(btn);
+  });
+
+  wrap.appendChild(lbl); wrap.appendChild(grp);
+  container.appendChild(wrap);
+}
+
 function updateSubbar() {
   var active = document.querySelector('.tab-btn.active');
   var tab = active ? active.getAttribute('data-tab') : 'tab1';
   var sb = document.getElementById('subbar');
-  if (tab === 'tab1') { sb.style.display = 'none'; sb.innerHTML = ''; return; }
-  sb.style.display = 'flex';
+  sb.innerHTML = '';
 
-  if (tab === 'tab2') {
-    sb.innerHTML = '<div class="filter-wrap"><span class="filter-label">CBF</span><div class="toggle-group"><button class="toggle-btn ' + (FILTERS.cbf === 'com' ? 'active' : '') + '" id="cbfCom">Com CBF</button><button class="toggle-btn ' + (FILTERS.cbf === 'sem' ? 'active' : '') + '" id="cbfSem">Sem CBF</button></div></div>';
-    document.getElementById('cbfCom').addEventListener('click', function() {
-      FILTERS.cbf = 'com';
-      document.getElementById('cbfCom').classList.add('active');
-      document.getElementById('cbfSem').classList.remove('active');
-      renderTab2();
-    });
-    document.getElementById('cbfSem').addEventListener('click', function() {
-      FILTERS.cbf = 'sem';
-      document.getElementById('cbfSem').classList.add('active');
-      document.getElementById('cbfCom').classList.remove('active');
-      renderTab2();
-    });
+  if (tab === 'tab1') {
+    sb.style.display = 'flex';
+    var variantes = getUnique(DATA.fdre.filter(isDetalhe), 'variante').filter(function(v) { return v && v !== '0'; });
+    var categorias = getUnique(DATA.fdre.filter(isDetalhe), 'categoria').filter(function(c) { return c; });
+    addSubFilter(sb, 'VARIANTE', 'sf-variante', variantes, function() { renderTab1(); });
+    addSubFilter(sb, 'CATEGORIA', 'sf-categoria', categorias, function() { renderTab1(); });
+
+  } else if (tab === 'tab2') {
+    sb.style.display = 'flex';
+    addToggleFilter(sb, 'CBF',
+      [{ value: 'com', label: 'Com CBF' }, { value: 'sem', label: 'Sem CBF' }],
+      FILTERS.cbf,
+      function(v) { FILTERS.cbf = v; renderTab2(); }
+    );
+    var areas = getUnique(DATA.orcamento, 'area').filter(function(a) { return a; });
+    addSubFilter(sb, 'ÁREA', 'sf-area', areas, function() { renderTab2(); });
+
   } else if (tab === 'tab3') {
-    sb.innerHTML =
-      '<div class="filter-wrap"><span class="filter-label">NÚCLEO</span>' +
-      '<div class="toggle-group">' +
-        '<button class="toggle-btn ' + (FILTERS.nucleo === 'Todos' ? 'active' : '') + '" id="nucTodos">Todos</button>' +
-        '<button class="toggle-btn ' + (FILTERS.nucleo === 'Núcleo A' ? 'active' : '') + '" id="nucA">Núcleo A</button>' +
-        '<button class="toggle-btn ' + (FILTERS.nucleo === 'Núcleo B' ? 'active' : '') + '" id="nucB">Núcleo B</button>' +
-      '</div></div>';
-    var nucMap = { nucTodos: 'Todos', nucA: 'Núcleo A', nucB: 'Núcleo B' };
-    ['nucTodos','nucA','nucB'].forEach(function(id) {
-      document.getElementById(id).addEventListener('click', function() {
-        sb.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('active'); });
-        document.getElementById(id).classList.add('active');
-        FILTERS.nucleo = nucMap[id];
-        renderTab3();
-      });
-    });
+    sb.style.display = 'flex';
+    addToggleFilter(sb, 'NÚCLEO',
+      [{ value: 'Todos', label: 'Todos' }, { value: 'Núcleo A', label: 'Núcleo A' }, { value: 'Núcleo B', label: 'Núcleo B' }],
+      FILTERS.nucleo,
+      function(v) { FILTERS.nucleo = v; renderTab3(); }
+    );
+    var segmentos = getUnique(DATA.nucleos, 'segmento').filter(function(s) { return s; });
+    var clientes  = getUnique(DATA.margem, 'cliente').filter(function(c) { return c; });
+    addSubFilter(sb, 'SEGMENTO', 'sf-segmento', segmentos, function() { renderTab3(); });
+    addSubFilter(sb, 'CLIENTE',  'sf-cliente',  clientes,  function() { renderTab3(); });
   }
 }
 
@@ -1474,6 +1554,7 @@ async function loadData() {
     DATA.nucleos         = normalizeCols(results[6]);
 
     buildFilters();
+    updateSubbar();
     renderTab1();
     var now = new Date();
     document.getElementById('last-update').textContent = 'Atualizado ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
